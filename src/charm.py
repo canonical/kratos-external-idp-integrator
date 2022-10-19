@@ -17,7 +17,6 @@ import logging
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus
 
 logger = logging.getLogger(__name__)
 

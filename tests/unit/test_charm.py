@@ -4,9 +4,7 @@
 # Learn more about testing at: https://juju.is/docs/sdk/testing
 
 import unittest
-from unittest.mock import Mock
 
-from ops.model import ActiveStatus
 from ops.testing import Harness
 
 from charm import KratosIdpIntegratorCharm
