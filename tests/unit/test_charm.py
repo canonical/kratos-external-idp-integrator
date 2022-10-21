@@ -49,18 +49,20 @@ def harness(config):
 
 
 def test_relation(harness, config):
-    harness.add_relation("provider_endpoint", "kratos-app")
-    relation = harness.charm.relation
-    assert not relation.data[harness.charm.unit]
-    assert relation.data[harness.charm.app] == config
+    relation_id = harness.add_relation("provider_endpoint", "kratos-app")
+    unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+    assert unit_data == {}
+    assert app_data == config
 
 
 def test_invalid_config(harness, invalid_provider_config):
     harness.update_config(invalid_provider_config)
-    harness.add_relation("provider_endpoint", "kratos-app")
-    relation = harness.charm.relation
-    assert not relation.data[harness.charm.unit]
-    assert relation.data[harness.charm.app] == {}
+    relation_id = harness.add_relation("provider_endpoint", "kratos-app")
+    unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+    assert unit_data == {}
+    assert app_data == {}
 
 
 def test_get_redirect_uri(harness, config, mock_event):
