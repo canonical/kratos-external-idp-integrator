@@ -1,2 +1,24 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+
+options:
+  client_id:
+    description: The registered client_id
+    type: string
+  client_secret:
+    description: The registered client_secret
+    type: string
+  provider:
+    default: generic
+    description: |
+      The provider name, must be one of the following:
+      ["generic", "google", "facebook", "microsoft", "github",
+      "apple", "gitlab", "auth0", "slack", "spotify", "discord",
+      "twitch", "netid", "yandex", "vkontakte", "dingtalk"].
+      Defaults to "generic"
+    type: string
+  issuer_url:
+    description: |
+      The issuer_url, this value is only used when "provider=generic"
+      type: string
+    type: string

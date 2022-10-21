@@ -6,3 +6,8 @@ description: |
   Charm used to integrate Charmed Kratos with external IdPs
 summary: |
   Charm used to integrate Charmed Kratos with external IdPs
+
+provides:
+  provider-endpoint:
+    interface: external_provider
+    limit: 1
