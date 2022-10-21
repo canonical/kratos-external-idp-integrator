@@ -2,6 +2,8 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""A Juju charm for integrating Ory Kratos with and external IdP."""
+
 import logging
 
 from ops.charm import CharmBase
@@ -13,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class InvalidConfigError(Exception):
+    """Internal exception that is raised if the charm config is not valid."""
+
     pass
 
 
@@ -67,7 +71,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._stored.set_default(redirect_uri="")
 
     @property
-    def relation(self):
+    def _relation(self):
         try:
             _relation = self.model.get_relation(self._RELATION_NAME)
         except KeyError:
@@ -76,6 +80,13 @@ class KratosIdpIntegratorCharm(CharmBase):
         return _relation
 
     def _validate_config(self):
+        """Validate the charm config.
+
+        Validate that:
+        - client_id exists and it is not None
+        - client_secret exists and it is not None
+        - provider is valid
+        """
         if not self.config.get("client_id"):
             raise InvalidConfigError("Missing required configuration: 'client_id'")
         elif not self.config.get("client_secret"):
@@ -96,7 +107,8 @@ class KratosIdpIntegratorCharm(CharmBase):
             )
 
     def _configure_relation(self, event):
-        relation = getattr(event, "relation", None) or self.relation
+        """Validate that the config is valid and pass it to the relation."""
+        relation = getattr(event, "relation", None) or self._relation
 
         # We validate the config first as we don't
         try:
@@ -122,13 +134,13 @@ class KratosIdpIntegratorCharm(CharmBase):
 
         relation.data[self.app].update(data)
 
-
     def _relation_changed(self, event):
         relation = event.relation
         self._stored.redirect_uri = relation.data[event.app].get("redirect_uri")
         self._configure_relation(event)
 
     def _get_redirect_uri(self, event):
+        """Get the redirect_uri from the relation and return it to the user."""
         redirect_uri = self._stored.redirect_uri
         if not redirect_uri:
             # Perhaps a more descriptive message is needed here?
