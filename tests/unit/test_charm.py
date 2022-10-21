@@ -1,17 +1,73 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
-#
-# Learn more about testing at: https://juju.is/docs/sdk/testing
 
-import unittest
+from unittest.mock import MagicMock
 
+import ops
+import pytest
 from ops.testing import Harness
 
 from charm import KratosIdpIntegratorCharm
 
+ops.testing.SIMULATE_CAN_CONNECT = True
 
-class TestCharm(unittest.TestCase):
-    def setUp(self):
-        self.harness = Harness(KratosIdpIntegratorCharm)
-        self.addCleanup(self.harness.cleanup)
-        self.harness.begin()
+
+@pytest.fixture
+def config():
+    return {
+        "client_id": "client_id",
+        "client_secret": "client_secret",
+        "provider": "generic",
+        "issuer_url": "http://example.com",
+    }
+
+
+@pytest.fixture
+def invalid_provider_config():
+    return {
+        "client_id": "client_id",
+        "client_secret": "client_secret",
+        "provider": "go0gle",
+    }
+
+
+@pytest.fixture
+def mock_event():
+    event = MagicMock()
+    event.set_results = MagicMock()
+    return event
+
+
+@pytest.fixture
+def harness(config):
+    harness = Harness(KratosIdpIntegratorCharm)
+    harness.update_config(config)
+    harness.set_leader(True)
+    harness.begin()
+    yield harness
+    harness.cleanup()
+
+
+def test_relation(harness, config):
+    harness.add_relation("provider_endpoint", "kratos-app")
+    relation = harness.charm.relation
+    assert not relation.data[harness.charm.unit]
+    assert relation.data[harness.charm.app] == config
+
+
+def test_invalid_config(harness, invalid_provider_config):
+    harness.update_config(invalid_provider_config)
+    harness.add_relation("provider_endpoint", "kratos-app")
+    relation = harness.charm.relation
+    assert not relation.data[harness.charm.unit]
+    assert relation.data[harness.charm.app] == {}
+
+
+def test_get_redirect_uri(harness, config, mock_event):
+    redirect_uri = "https://example.com/callback"
+    relation_id = harness.add_relation("provider_endpoint", "kratos-app")
+    harness.update_relation_data(relation_id, "kratos-app", {"redirect_uri": redirect_uri})
+    harness.charm._get_redirect_uri(mock_event)
+
+    mock_event.set_results.assert_called_once()
+    assert mock_event.set_results.mock_calls[0].args == ({"redirect_uri": redirect_uri},)
