@@ -19,7 +19,7 @@ class KratosIdpIntegratorCharm(CharmBase):
     """Charm the service."""
 
     _stored = StoredState()
-    _relation_name = "provider-endpoint"
+    _relation_name = "kratos-external-idp"
 
     def __init__(self, *args):
         super().__init__(*args)
