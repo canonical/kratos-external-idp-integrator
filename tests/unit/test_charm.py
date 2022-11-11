@@ -99,7 +99,7 @@ def test_relation(harness, config, relation_data, generic_databag):
     provider = config["provider"]
 
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
@@ -116,7 +116,7 @@ def test_extra_config(harness, config, relation_data, generic_databag, caplog):
     config["microsoft_tenant_id"] = "4242424242"
 
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
@@ -138,7 +138,7 @@ def test_config_no_relation(harness, config, relation_data):
 
 def test_invalid_config(harness, invalid_provider_config, config, generic_databag, relation_data):
     harness.update_config(invalid_provider_config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -160,7 +160,7 @@ def test_invalid_config(harness, invalid_provider_config, config, generic_databa
 def test_invalid_provider(harness, config, relation_data):
     config["provider"] = "error"
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     # harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
@@ -182,7 +182,7 @@ def test_microsoft_config(harness, microsoft_config, relation_data):
     }
 
     harness.update_config(microsoft_config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -195,7 +195,7 @@ def test_microsoft_config(harness, microsoft_config, relation_data):
 def test_microsoft_invalid_config(harness, config, relation_data):
     config["provider"] = "microsoft"
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -216,7 +216,7 @@ def test_apple_config(harness, apple_config, relation_data):
     }
 
     harness.update_config(apple_config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -229,7 +229,7 @@ def test_apple_config(harness, apple_config, relation_data):
 def test_apple_invalid_config(harness, config, relation_data):
     config["provider"] = "apple"
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -239,7 +239,7 @@ def test_apple_invalid_config(harness, config, relation_data):
 
 def test_get_redirect_uri(harness, config, mock_event, relation_data):
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     harness.charm._get_redirect_uri(mock_event)
@@ -262,7 +262,7 @@ def test_get_no_redirect_uri(harness, config, mock_event, relation_data):
 
 def test_disable(harness, config, generic_databag, relation_data):
     harness.update_config(config)
-    relation_id = harness.add_relation("provider-endpoint", "kratos-app")
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     harness.charm._disable(mock_event)

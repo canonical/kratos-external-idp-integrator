@@ -8,6 +8,6 @@ summary: |
   Charm used to integrate Charmed Kratos with external IdPs
 
 provides:
-  provider-endpoint:
+  kratos-external-idp:
     interface: external_provider
     limit: 1
