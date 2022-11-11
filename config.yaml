@@ -14,18 +14,17 @@ options:
       The provider name, must be one of the following:
       ["generic", "google", "facebook", "microsoft", "github",
       "apple", "gitlab", "auth0", "slack", "spotify", "discord",
-      "twitch", "netid", "yandex", "vkontakte", "dingtalk"].
+      "twitch", "netid", "yandex", "vk", "dingtalk"].
       Defaults to "generic"
     type: string
-  requested_claims:
-    type: string
-    description: |
-      A JSON object containing lists of Claims being requested from each interface (userinfo, id_token).
-      See https://openid.net/specs/openid-connect-core-1_0.html#ClaimsParameter for more details.
   issuer_url:
     description: |
       The issuer_url, this value is only used when provider is "generic" or "auth0"
       type: string
+    type: string
+  secret_backend:
+    description: |
+      The backend to use for passing sensitive information to Kratos
     type: string
   microsoft_tenant_id:
     description: The Microsoft tenant_id. To be used only with microsoft providers.
