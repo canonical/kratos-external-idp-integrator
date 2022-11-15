@@ -222,6 +222,7 @@ allowed_providers = {
 
 class RedirectURIChangedEvent(EventBase):
     """Event to notify the charm that the redirect_uri changed."""
+
     def __init__(self, handle, redirect_uri):
         super().__init__(handle)
         self.redirect_uri = redirect_uri
@@ -237,6 +238,7 @@ class RedirectURIChangedEvent(EventBase):
 
 class InvalidClientConfigEvent(EventBase):
     """Event to notify the charm that the provided config is invalid."""
+
     def __init__(self, handle, error):
         super().__init__(handle)
         self.error = error
@@ -252,6 +254,7 @@ class InvalidClientConfigEvent(EventBase):
 
 class ClientProviderEvents(ObjectEvents):
     """Event descriptor for events raised by `ExternalIdpProvider`."""
+
     redirect_uri_changed = EventSource(RedirectURIChangedEvent)
     invalid_client_config = EventSource(InvalidClientConfigEvent)
 
