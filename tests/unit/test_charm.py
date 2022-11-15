@@ -1,8 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
-
 import ops
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
@@ -10,15 +8,12 @@ ops.testing.SIMULATE_CAN_CONNECT = True
 
 
 def test_relation(harness, config, relation_data, generic_databag):
-    provider = config["provider"]
-
     harness.update_config(config)
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
-    app_data[provider] = json.loads(app_data[provider])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert unit_data == {}
@@ -26,7 +21,6 @@ def test_relation(harness, config, relation_data, generic_databag):
 
 
 def test_extra_config(harness, config, relation_data, generic_databag, caplog):
-    provider = config["provider"]
     config["microsoft_tenant_id"] = "4242424242"
 
     harness.update_config(config)
@@ -34,7 +28,6 @@ def test_extra_config(harness, config, relation_data, generic_databag, caplog):
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
-    app_data[provider] = json.loads(app_data[provider])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert (
@@ -62,9 +55,7 @@ def test_invalid_config(harness, invalid_provider_config, config, generic_databa
     harness.update_config(config)
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
-    provider = config["provider"]
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
-    app_data[provider] = json.loads(app_data[provider])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert app_data == generic_databag
@@ -88,10 +79,8 @@ def test_microsoft_config(harness, microsoft_config, relation_data):
         "client_id": microsoft_config["client_id"],
         "provider": microsoft_config["provider"],
         "secret_backend": microsoft_config["secret_backend"],
-        "microsoft": {
-            "tenant_id": microsoft_config["microsoft_tenant_id"],
-            "client_secret": microsoft_config["client_secret"],
-        },
+        "tenant_id": microsoft_config["microsoft_tenant_id"],
+        "client_secret": microsoft_config["client_secret"],
     }
 
     harness.update_config(microsoft_config)
@@ -99,7 +88,6 @@ def test_microsoft_config(harness, microsoft_config, relation_data):
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
-    app_data["microsoft"] = json.loads(app_data["microsoft"])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert app_data == expected_databag
@@ -121,11 +109,9 @@ def test_apple_config(harness, apple_config, relation_data):
         "client_id": "client_id",
         "provider": "apple",
         "secret_backend": "plain",
-        "apple": {
-            "team_id": "apple_team_id",
-            "private_key_id": "apple_private_key_id",
-            "private_key": "apple_private_key",
-        },
+        "team_id": "apple_team_id",
+        "private_key_id": "apple_private_key_id",
+        "private_key": "apple_private_key",
     }
 
     harness.update_config(apple_config)
@@ -133,7 +119,6 @@ def test_apple_config(harness, apple_config, relation_data):
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
-    app_data["apple"] = json.loads(app_data["apple"])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert app_data == expected_databag
@@ -185,8 +170,6 @@ def test_disable(harness, config, generic_databag, relation_data, mock_event):
     assert app_data == {}
 
     harness.charm._enable(mock_event)
-    provider = config["provider"]
-    app_data[provider] = json.loads(app_data[provider])
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert app_data == generic_databag
