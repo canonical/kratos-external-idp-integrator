@@ -24,13 +24,13 @@ jobs:
 
   tests:
     name: Run Tests
-    needs:
-      - lint
     uses: ./.github/workflows/tests.yaml
 
-  # publish runs in parallel with tests, as we always publish in this situation
   publish-charm:
     name: Publish Charm
+    needs:
+      - lint
+      - tests
     uses: ./.github/workflows/publish.yaml
     secrets:
       CHARMCRAFT_CREDENTIALS: ${{ secrets.CHARMCRAFT_CREDENTIALS }}
