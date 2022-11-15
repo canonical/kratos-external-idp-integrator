@@ -41,5 +41,5 @@ jobs:
         uses: canonical/charm-logdump-action@main
         if: failure()
         with:
-          app: kratos-external-idp-integratos
+          app: kratos-external-idp-integrator
           model: testing
