@@ -18,9 +18,7 @@ TODO: Include a link to the default image your charm uses
 
 ## Contributing
 
-<!-- TEMPLATE-TODO: Change this URL to be the full Github path to CONTRIBUTING.md-->
-
 Please see the [Juju SDK docs](https://juju.is/docs/sdk) for guidelines on enhancements to this
 charm following best practice guidelines, and
-[CONTRIBUTING.md](https://github.com/<name>/<operator>/blob/main/CONTRIBUTING.md) for developer
+[CONTRIBUTING.md](https://github.com/canonical/kratos-external-idp-integrator/blob/main/CONTRIBUTING.md) for developer
 guidance.
