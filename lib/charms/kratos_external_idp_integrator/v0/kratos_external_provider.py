@@ -54,7 +54,6 @@ class SomeCharm(CharmBase):
         self.unit.status = BlockedStatus(event.error)
 """
 
-import json
 import logging
 
 from ops.framework import EventBase, EventSource, Object, ObjectEvents
@@ -79,7 +78,7 @@ class InvalidConfigError(Exception):
     pass
 
 
-class BaseConfigHandler:
+class BaseProviderConfigHandler:
     """The base class for parsing a provider's config."""
 
     mandatory_fields = {"provider", "client_id", "secret_backend"}
@@ -100,10 +99,10 @@ class BaseConfigHandler:
                 )
             config_keys.remove(key)
 
-        if config["secret_backend"] not in ["plain", "secret", "vault"]:
+        if config["secret_backend"] not in ["relation", "secret", "vault"]:
             raise InvalidConfigError(
                 f"Invalid value {config['secret_backend']} for `secret_backend` "
-                "allowed values are: ['plain', 'secret', 'vault']"
+                "allowed values are: ['relation', 'secret', 'vault']"
             )
 
         for key in config_keys:
@@ -112,31 +111,33 @@ class BaseConfigHandler:
         return {key: value for key, value in config.items() if key not in config_keys}
 
     @classmethod
-    def handle_config(cls, **config):
+    def handle_config(cls, config):
         """Validate the config and transform it in the relation databag expected format."""
         config = cls.sanitize_config(config)
         return cls.parse_config(config)
+
+    @classmethod
+    def parse_config(cls, config):
+        """Parse the user provided config into the relation databag expected format."""
+        return [
+            {
+                "client_id": config["client_id"],
+                "provider": config["provider"],
+                "secret_backend": config["secret_backend"],
+                **cls._parse_provider_config(config),
+            }
+        ]
 
     @classmethod
     def _parse_provider_config(cls, config):
         """Create the provider specific config."""
         raise NotImplementedError()
 
-    @classmethod
-    def parse_config(cls, config):
-        """Parse the user provided config into the relation databag expected format."""
-        return {
-            "client_id": config["client_id"],
-            "provider": config["provider"],
-            "secret_backend": config["secret_backend"],
-            config["provider"]: json.dumps(cls._parse_provider_config(config)),
-        }
 
-
-class GenericConfigHandler(BaseConfigHandler):
+class GenericConfigHandler(BaseProviderConfigHandler):
     """The class for parsing a 'generic' provider's config."""
 
-    mandatory_fields = BaseConfigHandler.mandatory_fields | {"client_secret", "issuer_url"}
+    mandatory_fields = BaseProviderConfigHandler.mandatory_fields | {"client_secret", "issuer_url"}
     providers = ["generic", "auth0"]
 
     @classmethod
@@ -147,10 +148,10 @@ class GenericConfigHandler(BaseConfigHandler):
         }
 
 
-class SocialConfigHandler(BaseConfigHandler):
+class SocialConfigHandler(BaseProviderConfigHandler):
     """The class for parsing a social provider's config."""
 
-    mandatory_fields = BaseConfigHandler.mandatory_fields | {"client_secret"}
+    mandatory_fields = BaseProviderConfigHandler.mandatory_fields | {"client_secret"}
     providers = [
         "google",
         "facebook",
@@ -173,11 +174,10 @@ class SocialConfigHandler(BaseConfigHandler):
         }
 
 
-class MicrosoftConfigHandler(BaseConfigHandler):
+class MicrosoftConfigHandler(SocialConfigHandler):
     """The class for parsing a 'microsoft' provider's config."""
 
-    mandatory_fields = BaseConfigHandler.mandatory_fields | {
-        "client_secret",
+    mandatory_fields = SocialConfigHandler.mandatory_fields | {
         "microsoft_tenant_id",
     }
     providers = ["microsoft"]
@@ -190,14 +190,15 @@ class MicrosoftConfigHandler(BaseConfigHandler):
         }
 
 
-class AppleConfigHandler(BaseConfigHandler):
+class AppleConfigHandler(BaseProviderConfigHandler):
     """The class for parsing an 'apple' provider's config."""
 
-    mandatory_fields = BaseConfigHandler.mandatory_fields | {
+    mandatory_fields = BaseProviderConfigHandler.mandatory_fields | {
         "apple_team_id",
         "apple_private_key_id",
         "apple_private_key",
     }
+    _secret_fields = ["private_key"]
     providers = ["apple"]
 
     @classmethod
@@ -252,7 +253,7 @@ class InvalidClientConfigEvent(EventBase):
         self.error = snapshot["error"]
 
 
-class ClientProviderEvents(ObjectEvents):
+class ExternalIdpProviderEvents(ObjectEvents):
     """Event descriptor for events raised by `ExternalIdpProvider`."""
 
     redirect_uri_changed = EventSource(RedirectURIChangedEvent)
@@ -262,7 +263,7 @@ class ClientProviderEvents(ObjectEvents):
 class ExternalIdpProvider(Object):
     """Forward client configurations to Identity Broker."""
 
-    on = ClientProviderEvents()
+    on = ExternalIdpProviderEvents()
 
     def __init__(self, charm, client_config, relation_name=DEFAULT_RELATION_NAME):
         super().__init__(charm, relation_name)
@@ -271,6 +272,7 @@ class ExternalIdpProvider(Object):
         self.update_client_config(client_config)
 
         events = self._charm.on[relation_name]
+        self.framework.observe(events.relation_joined, self._on_provider_endpoint_relation_joined)
         self.framework.observe(
             events.relation_changed, self._on_provider_endpoint_relation_changed
         )
@@ -278,13 +280,14 @@ class ExternalIdpProvider(Object):
             events.relation_departed, self._on_provider_endpoint_relation_departed
         )
 
-    def _on_provider_endpoint_relation_changed(self, event):
+    def _on_provider_endpoint_relation_joined(self, event):
         if not self._client_config:
             return
 
         self._set_client_config(**self._client_config)
 
-        redirect_uri = event.relation.data[event.app].get("redirect_uri")
+    def _on_provider_endpoint_relation_changed(self, event):
+        redirect_uri = event.relation.data[event.app][0].get("redirect_uri")
         self.on.redirect_uri_changed.emit(redirect_uri=redirect_uri)
 
     def _on_provider_endpoint_relation_departed(self, event):
@@ -302,21 +305,22 @@ class ExternalIdpProvider(Object):
             relation.data[self._charm.app].clear()
 
     def update_client_config(self, config):
-        """Validate that the is valid and parse it."""
+        """Update the client config."""
         try:
-            self._client_config = self._handle_config(**config)
+            self._client_config = self._handle_config(config)
         except InvalidConfigError as e:
             self._client_config = {}
             self.on.invalid_client_config.emit(error=e.args[0])
+        self._create_secrets()
 
-    def _handle_config(self, **kwargs):
-        provider = kwargs.get("provider")
+    def _handle_config(self, config):
+        provider = config.get("provider")
         if provider not in allowed_providers:
             raise InvalidConfigError(
                 "Required configuration 'provider' MUST be one of the following: "
                 + ", ".join(allowed_providers)
             )
-        return allowed_providers[provider].handle_config(**kwargs)
+        return allowed_providers[provider].handle_config(config)
 
     def _set_client_config(self, **kwargs):
         if not self._charm.unit.is_leader():
@@ -326,3 +330,14 @@ class ExternalIdpProvider(Object):
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
             relation.data[self._charm.app].update(self._client_config)
+
+    def _create_secrets(self):
+        backend = self._client_config["secret_backend"]
+
+        if backend == "relation":
+            pass
+        elif backend == "secret":
+            raise NotImplementedError()
+        elif backend == "vault":
+            raise NotImplementedError()
+        raise ValueError(f"Invalid backend: {backend}")

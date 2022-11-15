@@ -77,8 +77,6 @@ class KratosIdpIntegratorCharm(CharmBase):
     def _on_invalid_client_config(self, event):
         # Can this be fired before the
         self.unit.status = BlockedStatus(event.error)
-        # TODO: Do we need to delete the client?
-        self.external_idp_provider.remove_client()
 
     def _get_redirect_uri(self, event):
         """Get the redirect_uri from the relation and return it to the user."""
@@ -97,15 +95,14 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._configure_relation()
 
     def _configure_relation(self):
-        """Validate that the config is valid and pass it to the relation."""
+        """Create or remove the client."""
         if not self._relation or isinstance(self.unit.status, BlockedStatus):
             return
 
         if not self._stored.enabled:
             self.external_idp_provider.remove_client()
-            return
-
-        self.external_idp_provider.create_client()
+        else:
+            self.external_idp_provider.create_client()
 
 
 if __name__ == "__main__":
