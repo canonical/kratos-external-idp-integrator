@@ -1,3 +1,6 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 """# Interface library for Kratos external OIDC providers.
 
 This library wraps relation endpoints using the `kratos-external-idp` interface
@@ -54,7 +57,7 @@ class SomeCharm(CharmBase):
 import json
 import logging
 
-from ops.framework import BoundEvent, EventBase, EventSource, Object, ObjectEvents
+from ops.framework import EventBase, EventSource, Object, ObjectEvents
 
 # The unique Charmhub library identifier, never change it
 LIBID = "33040051de7f43a8bb43349f2b037dfc"
@@ -84,7 +87,7 @@ class BaseConfigHandler:
 
     @classmethod
     def sanitize_config(cls, config):
-        """Validate and sanitize the user provided config, warn the user about any ignored config."""
+        """Validate and sanitize the user provided config."""
         config_keys = set(config.keys())
         provider = config["provider"]
         if provider not in cls.providers:
@@ -218,36 +221,43 @@ allowed_providers = {
 
 
 class RedirectURIChangedEvent(EventBase):
+    """Event to notify the charm that the redirect_uri changed."""
     def __init__(self, handle, redirect_uri):
         super().__init__(handle)
         self.redirect_uri = redirect_uri
 
     def snapshot(self):
+        """Save redirect_uri."""
         return {"redirect_uri": self.redirect_uri}
 
     def restore(self, snapshot):
+        """Restore redirect_uri."""
         self.redirect_uri = snapshot["redirect_uri"]
 
 
 class InvalidClientConfigEvent(EventBase):
+    """Event to notify the charm that the provided config is invalid."""
     def __init__(self, handle, error):
         super().__init__(handle)
         self.error = error
 
     def snapshot(self):
+        """Save error."""
         return {"error": self.error}
 
     def restore(self, snapshot):
+        """Restore error."""
         self.error = snapshot["error"]
 
 
 class ClientProviderEvents(ObjectEvents):
+    """Event descriptor for events raised by `ExternalIdpProvider`."""
     redirect_uri_changed = EventSource(RedirectURIChangedEvent)
     invalid_client_config = EventSource(InvalidClientConfigEvent)
 
 
 class ExternalIdpProvider(Object):
-    """Forward client configurations to Identity Broker"""
+    """Forward client configurations to Identity Broker."""
 
     on = ClientProviderEvents()
 
@@ -278,11 +288,11 @@ class ExternalIdpProvider(Object):
         self.on.redirect_uri_changed.emit(redirect_uri="")
 
     def create_client(self):
-        """Parse the charm config and pass it to the relation databag"""
+        """Parse the charm config and pass it to the relation databag."""
         return self._set_client_config()
 
     def remove_client(self):
-        """Remove the client config to the relation databag"""
+        """Remove the client config to the relation databag."""
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
