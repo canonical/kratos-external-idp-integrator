@@ -26,10 +26,8 @@ def generic_databag(config):
         "client_id": config["client_id"],
         "provider": config["provider"],
         "secret_backend": config["secret_backend"],
-        config["provider"]: {
-            "client_secret": config["client_secret"],
-            "issuer_url": config["issuer_url"],
-        },
+        "client_secret": config["client_secret"],
+        "issuer_url": config["issuer_url"],
     }
 
 
@@ -75,10 +73,12 @@ def mock_event():
 
 @pytest.fixture
 def relation_data():
-    return {
-        "redirect_uri": "https://example.com/callback",
-        "provider_id": "provider",
-    }
+    return [
+        {
+            "redirect_uri": "https://example.com/callback",
+            "provider_id": "provider",
+        }
+    ]
 
 
 @pytest.fixture

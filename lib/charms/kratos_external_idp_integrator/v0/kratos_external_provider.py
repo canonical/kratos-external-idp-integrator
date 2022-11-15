@@ -238,7 +238,7 @@ class RedirectURIChangedEvent(EventBase):
 
 
 class InvalidClientConfigEvent(EventBase):
-    """Event to notify the charm that the provided config is invalid."""
+    """Event to notify the charm that the requirer's databag is invalid."""
 
     def __init__(self, handle, error):
         super().__init__(handle)
@@ -287,7 +287,10 @@ class ExternalIdpProvider(Object):
         self._set_client_config(**self._client_config)
 
     def _on_provider_endpoint_relation_changed(self, event):
-        redirect_uri = event.relation.data[event.app][0].get("redirect_uri")
+        data = event.relation.data[event.app]
+        if len(data) == 0:
+            return
+        redirect_uri = data[0].get("redirect_uri")
         self.on.redirect_uri_changed.emit(redirect_uri=redirect_uri)
 
     def _on_provider_endpoint_relation_departed(self, event):
@@ -332,12 +335,13 @@ class ExternalIdpProvider(Object):
             relation.data[self._charm.app].update(self._client_config)
 
     def _create_secrets(self):
-        backend = self._client_config["secret_backend"]
+        for conf in self._client_config:
+            backend = conf["secret_backend"]
 
-        if backend == "relation":
-            pass
-        elif backend == "secret":
-            raise NotImplementedError()
-        elif backend == "vault":
-            raise NotImplementedError()
-        raise ValueError(f"Invalid backend: {backend}")
+            if backend == "relation":
+                pass
+            elif backend == "secret":
+                raise NotImplementedError()
+            elif backend == "vault":
+                raise NotImplementedError()
+            raise ValueError(f"Invalid backend: {backend}")
