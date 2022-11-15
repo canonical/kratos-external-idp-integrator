@@ -119,7 +119,6 @@ def test_extra_config(harness, config, relation_data, generic_databag, caplog):
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
-    unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
     app_data[provider] = json.loads(app_data[provider])
 
