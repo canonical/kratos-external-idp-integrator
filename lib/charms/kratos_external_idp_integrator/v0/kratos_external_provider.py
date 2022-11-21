@@ -70,6 +70,7 @@ class SomeCharm(CharmBase):
 
 import json
 import logging
+from collections import defaultdict
 
 import jsonschema
 from ops.framework import EventBase, EventSource, Object, ObjectEvents
@@ -484,3 +485,126 @@ class ExternalIdpProvider(Object):
                 raise NotImplementedError()
             else:
                 raise ValueError(f"Invalid backend: {backend}")
+
+
+class ClientConfigChangedEvent(EventBase):
+    """Event to notify the charm that a provider's client config changed."""
+
+    def __init__(self, handle, client_id, provider, issuer_url):
+        super().__init__(handle)
+        self.client_id = client_id
+        self.provider = provider
+        self.issuer_url = issuer_url
+
+    def snapshot(self):
+        """Save client data."""
+        return {
+            "client_id": self.client_id,
+            "provider": self.provider,
+            "issuer_url": self.issuer_url,
+        }
+
+    def restore(self, snapshot):
+        """Restore client data."""
+        self.client_id = snapshot["client_id"]
+        self.provider = snapshot["provider"]
+        self.issuer_url = snapshot["issuer_url"]
+
+
+class ClientDeletedEvent(EventBase):
+    """Event to notify the charm that a provider's config was deleted."""
+
+    def __init__(self, handle):
+        super().__init__(handle)
+
+    def snapshot(self):
+        """Save event."""
+        return {}
+
+    def restore(self, snapshot):
+        """Restore event."""
+        pass
+
+
+class ExternalIdpRequirerEvents(ObjectEvents):
+    """Event descriptor for events raised by `ExternalIdpRequirerEvents`."""
+
+    client_config_changed = EventSource(ClientConfigChangedEvent)
+    client_deleted = EventSource(ClientDeletedEvent)
+
+
+class ExternalIdpRequirer(Object):
+    """Receive the External Idp configurations for Kratos."""
+
+    on = ExternalIdpRequirerEvents()
+
+    def __init__(self, charm, relation_name=DEFAULT_RELATION_NAME):
+        super().__init__(charm, relation_name)
+        self._charm = charm
+        self._relation_name = relation_name
+
+        events = self._charm.on[relation_name]
+        self.framework.observe(
+            events.relation_changed, self._on_provider_endpoint_relation_changed
+        )
+        self.framework.observe(
+            events.relation_departed, self._on_provider_endpoint_relation_departed
+        )
+
+    def _on_provider_endpoint_relation_changed(self, event):
+        client_id = event.relation.data[event.app].get("client_id")
+        provider = event.relation.data[event.app].get("provider")
+        relation_id = event.relation.id
+
+        if client_id and provider:
+            self.on.client_config_changed.emit(
+                client_id=client_id,
+                provider_id=provider,
+                relation_id=relation_id,
+            )
+        else:
+            self.on.client_deleted.emit()
+
+    def _on_provider_endpoint_relation_departed(self, event):
+        self.on.client_deleted.emit()
+
+    def set_relation_registered_provider(self, redirect_uri, provider_id, relation_id):
+        """Update the relation databag."""
+        relation = self.model.get_relation(
+            relation_name=self._relation_name, relation_id=relation_id
+        )
+        relation.data[self.model.app].update(
+            redirect_uri=redirect_uri,
+            provider_id=provider_id,
+        )
+
+    def get_providers(self):
+        """Iterate over the relations and fetch all providers."""
+        providers = defaultdict(list)
+        # For each relation get the client credentials and compile them into a
+        # single object
+        for relation in self.model.relations[self._relation_name]:
+            data = relation.data[relation.app]
+            for p in json.loads(data["providers"]):
+                provider_type, provider = self._get_provider(p)
+                providers[provider_type].append(provider)
+
+        return providers
+
+    def _get_provider(self, provider):
+        provider = self._extract_secrets(provider)
+        provider_type = provider["provider"]
+        return provider_type, provider
+
+    def _extract_secrets(self, data):
+        backend = data["secret_backend"]
+
+        if backend == "relation":
+            pass
+        elif backend == "secret":
+            raise NotImplementedError()
+        elif backend == "vault":
+            raise NotImplementedError()
+        else:
+            raise ValueError(f"Invalid backend: {backend}")
+        return data

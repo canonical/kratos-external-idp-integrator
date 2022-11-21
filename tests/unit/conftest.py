@@ -37,6 +37,35 @@ def generic_databag(config):
 
 
 @pytest.fixture
+def relation_data():
+    return {
+        "providers": json.dumps(
+            [
+                {
+                    "redirect_uri": "https://example.com/callback",
+                    "provider_id": "provider",
+                }
+            ]
+        )
+    }
+
+
+@pytest.fixture
+def generic_kratos_config(config):
+    return {
+        config["provider"]: [
+            {
+                "client_id": config["client_id"],
+                "provider": config["provider"],
+                "secret_backend": config["secret_backend"],
+                "client_secret": config["client_secret"],
+                "issuer_url": config["issuer_url"],
+            }
+        ]
+    }
+
+
+@pytest.fixture
 def microsoft_config():
     return {
         "client_id": "client_id",
@@ -74,20 +103,6 @@ def mock_event():
     event = MagicMock()
     event.set_results = MagicMock()
     return event
-
-
-@pytest.fixture
-def relation_data():
-    return {
-        "providers": json.dumps(
-            [
-                {
-                    "redirect_uri": "https://example.com/callback",
-                    "provider_id": "provider",
-                }
-            ]
-        )
-    }
 
 
 @pytest.fixture
