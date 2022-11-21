@@ -44,6 +44,7 @@ class KratosIdpIntegratorCharm(CharmBase):
 
         self._stored.set_default(redirect_uri="")
         self._stored.set_default(enabled=True)
+        self._stored.set_default(invalid_config=False)
 
     @property
     def _relation(self):
@@ -51,6 +52,7 @@ class KratosIdpIntegratorCharm(CharmBase):
 
     def _on_config_changed(self, event):
         self.unit.status = WaitingStatus("Configuring the charm")
+        self._stored.invalid_config = False
         self.external_idp_provider.update_client_config(self.config)
         self._configure_relation()
         self._on_update_status(event)
@@ -62,7 +64,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         - If no relation exists, status is waiting
         - Else status is active
         """
-        if not isinstance(self.unit.status, BlockedStatus):
+        if not self._stored.invalid_config:
             if not self._relation:
                 self.unit.status = BlockedStatus("Waiting for relation with Kratos")
             elif not self._stored.redirect_uri and self._stored.enabled:
@@ -75,7 +77,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._on_update_status(event)
 
     def _on_invalid_client_config(self, event):
-        # Can this be fired before the
+        self._stored.invalid_config = True
         self.unit.status = BlockedStatus(event.error)
 
     def _get_redirect_uri(self, event):

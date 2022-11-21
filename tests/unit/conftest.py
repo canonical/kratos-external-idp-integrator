@@ -17,18 +17,22 @@ def config():
         "client_secret": "client_secret",
         "provider": "generic",
         "issuer_url": "http://example.com",
-        "secret_backend": "plain",
+        "secret_backend": "relation",
     }
 
 
 @pytest.fixture
 def generic_databag(config):
     return {
-        "client_id": config["client_id"],
-        "provider": config["provider"],
-        "secret_backend": config["secret_backend"],
-        "client_secret": config["client_secret"],
-        "issuer_url": config["issuer_url"],
+        "providers": [
+            {
+                "client_id": config["client_id"],
+                "provider": config["provider"],
+                "secret_backend": config["secret_backend"],
+                "client_secret": config["client_secret"],
+                "issuer_url": config["issuer_url"],
+            }
+        ]
     }
 
 
@@ -39,7 +43,7 @@ def microsoft_config():
         "client_secret": "client_secret",
         "provider": "microsoft",
         "microsoft_tenant_id": "some-tenant-id",
-        "secret_backend": "plain",
+        "secret_backend": "relation",
     }
 
 
@@ -48,7 +52,7 @@ def apple_config():
     return {
         "client_id": "client_id",
         "provider": "apple",
-        "secret_backend": "plain",
+        "secret_backend": "relation",
         "apple_team_id": "apple_team_id",
         "apple_private_key_id": "apple_private_key_id",
         "apple_private_key": "apple_private_key",
@@ -61,7 +65,7 @@ def invalid_provider_config():
         "client_id": "client_id",
         "client_secret": "client_secret",
         "provider": "go0gle",
-        "secret_backend": "plain",
+        "secret_backend": "relation",
     }
 
 
@@ -74,12 +78,16 @@ def mock_event():
 
 @pytest.fixture
 def relation_data():
-    return [
-        json.dumps({
-            "redirect_uri": "https://example.com/callback",
-            "provider_id": "provider",
-        })
-    ]
+    return {
+        "providers": json.dumps(
+            [
+                {
+                    "redirect_uri": "https://example.com/callback",
+                    "provider_id": "provider",
+                }
+            ]
+        )
+    }
 
 
 @pytest.fixture
