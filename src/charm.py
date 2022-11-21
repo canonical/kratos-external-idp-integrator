@@ -64,7 +64,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         """
         if not isinstance(self.unit.status, BlockedStatus):
             if not self._relation:
-                self.unit.status = WaitingStatus("Waiting for relation with Kratos")
+                self.unit.status = BlockedStatus("Waiting for relation with Kratos")
             elif not self._stored.redirect_uri and self._stored.enabled:
                 self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
             else:
