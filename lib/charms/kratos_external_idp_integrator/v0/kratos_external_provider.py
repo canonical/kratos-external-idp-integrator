@@ -7,6 +7,7 @@ This library wraps relation endpoints using the `kratos-external-idp` interface
 and provides a Python API for both requesting Kratos to register the a client for
 communicating with an external provider.
 
+
 ## Getting Started
 
 To get started using the library, you just need to fetch the library using `charmcraft`.
@@ -54,6 +55,7 @@ class SomeCharm(CharmBase):
         self.unit.status = BlockedStatus(event.error)
 """
 
+import json
 import logging
 
 from ops.framework import EventBase, EventSource, Object, ObjectEvents
@@ -189,6 +191,13 @@ class MicrosoftConfigHandler(SocialConfigHandler):
             "tenant_id": config["microsoft_tenant_id"],
         }
 
+    @classmethod
+    def _parse_relation_data(cls, data):
+        return {
+            "client_secret": data["client_secret"],
+            "tenant_id": data["tenant_id"],
+        }
+
 
 class AppleConfigHandler(BaseProviderConfigHandler):
     """The class for parsing an 'apple' provider's config."""
@@ -273,6 +282,7 @@ class ExternalIdpProvider(Object):
 
         events = self._charm.on[relation_name]
         self.framework.observe(events.relation_joined, self._on_provider_endpoint_relation_joined)
+        self.framework.observe(events.relation_joined, self._on_provider_endpoint_relation_joined)
         self.framework.observe(
             events.relation_changed, self._on_provider_endpoint_relation_changed
         )
@@ -284,10 +294,11 @@ class ExternalIdpProvider(Object):
         if not self._client_config:
             return
 
-        self._set_client_config(**self._client_config)
+        self._set_client_config()
+        self._charm.on.update_status.emit()
 
     def _on_provider_endpoint_relation_changed(self, event):
-        data = event.relation.data[event.app]
+        data = json.loads(event.relation.data[event.app]["providers"])
         if len(data) == 0:
             return
         redirect_uri = data[0].get("redirect_uri")
@@ -337,7 +348,7 @@ class ExternalIdpProvider(Object):
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
-            relation.data[self._charm.app].update(self._client_config)
+            relation.data[self._charm.app].update(providers=json.dumps(self._client_config))
 
     def _create_secrets(self):
         for conf in self._client_config:
@@ -349,4 +360,5 @@ class ExternalIdpProvider(Object):
                 raise NotImplementedError()
             elif backend == "vault":
                 raise NotImplementedError()
-            raise ValueError(f"Invalid backend: {backend}")
+            else:
+                raise ValueError(f"Invalid backend: {backend}")

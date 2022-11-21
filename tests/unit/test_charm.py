@@ -1,31 +1,48 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import json
+
 import ops
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 ops.testing.SIMULATE_CAN_CONNECT = True
 
 
+def parse_databag(data):
+    print(data)
+    data = dict(data)
+    data["providers"] = json.loads(data["providers"])
+    return data
+
+
 def test_relation(harness, config, relation_data, generic_databag):
     harness.update_config(config)
-    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
-    harness.update_relation_data(relation_id, "kratos-app", relation_data)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
-    assert isinstance(harness.charm.unit.status, ActiveStatus)
+    assert isinstance(harness.charm.unit.status, WaitingStatus)
     assert unit_data == {}
-    assert app_data == generic_databag
+    assert parse_databag(app_data) == generic_databag
+
+    harness.update_relation_data(relation_id, "kratos", relation_data)
+
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert isinstance(harness.charm.unit.status, ActiveStatus)
+    assert parse_databag(app_data) == generic_databag
 
 
 def test_extra_config(harness, config, relation_data, generic_databag, caplog):
     config["microsoft_tenant_id"] = "4242424242"
 
     harness.update_config(config)
-    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
-    harness.update_relation_data(relation_id, "kratos-app", relation_data)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+    harness.update_relation_data(relation_id, "kratos", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
@@ -34,12 +51,12 @@ def test_extra_config(harness, config, relation_data, generic_databag, caplog):
         caplog.records[0].message
         == "Invalid config 'microsoft_tenant_id' for provider 'generic' will be ignored"
     )
-    assert app_data == generic_databag
+    assert parse_databag(app_data) == generic_databag
 
 
 def test_config_no_relation(harness, config, relation_data):
     harness.update_config(config)
-    assert isinstance(harness.charm.unit.status, WaitingStatus)
+    assert isinstance(harness.charm.unit.status, BlockedStatus)
 
 
 def test_invalid_config(harness, invalid_provider_config, config, generic_databag, relation_data):
@@ -58,7 +75,7 @@ def test_invalid_config(harness, invalid_provider_config, config, generic_databa
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert app_data == generic_databag
+    assert parse_databag(app_data) == generic_databag
 
 
 def test_invalid_provider(harness, config, relation_data):
@@ -76,21 +93,26 @@ def test_invalid_provider(harness, config, relation_data):
 
 def test_microsoft_config(harness, microsoft_config, relation_data):
     expected_databag = {
-        "client_id": microsoft_config["client_id"],
-        "provider": microsoft_config["provider"],
-        "secret_backend": microsoft_config["secret_backend"],
-        "tenant_id": microsoft_config["microsoft_tenant_id"],
-        "client_secret": microsoft_config["client_secret"],
+        "providers": [
+            {
+                "client_id": microsoft_config["client_id"],
+                "provider": microsoft_config["provider"],
+                "secret_backend": microsoft_config["secret_backend"],
+                "tenant_id": microsoft_config["microsoft_tenant_id"],
+                "client_secret": microsoft_config["client_secret"],
+            }
+        ]
     }
 
     harness.update_config(microsoft_config)
-    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
-    harness.update_relation_data(relation_id, "kratos-app", relation_data)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+    harness.update_relation_data(relation_id, "kratos", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert app_data == expected_databag
+    assert parse_databag(app_data) == expected_databag
 
 
 def test_microsoft_invalid_config(harness, config, relation_data):
@@ -106,22 +128,27 @@ def test_microsoft_invalid_config(harness, config, relation_data):
 
 def test_apple_config(harness, apple_config, relation_data):
     expected_databag = {
-        "client_id": "client_id",
-        "provider": "apple",
-        "secret_backend": "plain",
-        "team_id": "apple_team_id",
-        "private_key_id": "apple_private_key_id",
-        "private_key": "apple_private_key",
+        "providers": [
+            {
+                "client_id": "client_id",
+                "provider": "apple",
+                "secret_backend": "relation",
+                "team_id": "apple_team_id",
+                "private_key_id": "apple_private_key_id",
+                "private_key": "apple_private_key",
+            }
+        ]
     }
 
     harness.update_config(apple_config)
-    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
-    harness.update_relation_data(relation_id, "kratos-app", relation_data)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+    harness.update_relation_data(relation_id, "kratos", relation_data)
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert app_data == expected_databag
+    assert parse_databag(app_data) == expected_databag
 
 
 def test_apple_invalid_config(harness, config, relation_data):
@@ -136,6 +163,8 @@ def test_apple_invalid_config(harness, config, relation_data):
 
 
 def test_get_redirect_uri(harness, config, mock_event, relation_data):
+    redirect_uri = json.loads(relation_data["providers"])[0]["redirect_uri"]
+
     harness.update_config(config)
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
@@ -144,9 +173,7 @@ def test_get_redirect_uri(harness, config, mock_event, relation_data):
 
     mock_event.set_results.assert_called_once()
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert mock_event.set_results.mock_calls[0].args == (
-        dict(redirect_uri=relation_data["redirect_uri"]),
-    )
+    assert mock_event.set_results.mock_calls[0].args == (dict(redirect_uri=redirect_uri),)
 
 
 def test_get_no_redirect_uri(harness, config, mock_event, relation_data):
@@ -172,4 +199,4 @@ def test_disable(harness, config, generic_databag, relation_data, mock_event):
     harness.charm._enable(mock_event)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert app_data == generic_databag
+    assert parse_databag(app_data) == generic_databag
