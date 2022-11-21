@@ -1,6 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -74,10 +75,10 @@ def mock_event():
 @pytest.fixture
 def relation_data():
     return [
-        {
+        json.dumps({
             "redirect_uri": "https://example.com/callback",
             "provider_id": "provider",
-        }
+        })
     ]
 
 

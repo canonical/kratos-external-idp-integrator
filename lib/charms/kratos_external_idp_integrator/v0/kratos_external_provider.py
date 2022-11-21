@@ -296,8 +296,13 @@ class ExternalIdpProvider(Object):
     def _on_provider_endpoint_relation_departed(self, event):
         self.on.redirect_uri_changed.emit(redirect_uri="")
 
-    def create_client(self):
-        """Parse the charm config and pass it to the relation databag."""
+    def create_client(self, config=None):
+        """Use the configuration to create the relation databag.
+
+        If the config param is used, the client_config is updated.
+        """
+        if config:
+            self.update_client_config(config)
         return self._set_client_config()
 
     def remove_client(self):
@@ -308,7 +313,7 @@ class ExternalIdpProvider(Object):
             relation.data[self._charm.app].clear()
 
     def update_client_config(self, config):
-        """Update the client config."""
+        """Validate and update the client config."""
         try:
             self._client_config = self._handle_config(config)
         except InvalidConfigError as e:
