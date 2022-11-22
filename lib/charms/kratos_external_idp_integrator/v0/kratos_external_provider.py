@@ -165,8 +165,6 @@ REQUIRER_JSON_SCHEMA = {
 class InvalidConfigError(Exception):
     """Internal exception that is raised if the charm config is not valid."""
 
-    pass
-
 
 class DataValidationError(RuntimeError):
     """Raised when data validation fails on relation data."""
@@ -446,6 +444,8 @@ class ExternalIdpProvider(Object):
         if not self._charm.unit.is_leader():
             return
 
+        data = dict(providers=json.dumps(self._client_config))
+        _validate_data(data, PROVIDER_JSON_SCHEMA)
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
@@ -490,47 +490,18 @@ class ExternalIdpProvider(Object):
 class ClientConfigChangedEvent(EventBase):
     """Event to notify the charm that a provider's client config changed."""
 
-    def __init__(self, handle, client_id, provider, issuer_url):
-        super().__init__(handle)
-        self.client_id = client_id
-        self.provider = provider
-        self.issuer_url = issuer_url
-
-    def snapshot(self):
-        """Save client data."""
-        return {
-            "client_id": self.client_id,
-            "provider": self.provider,
-            "issuer_url": self.issuer_url,
-        }
-
-    def restore(self, snapshot):
-        """Restore client data."""
-        self.client_id = snapshot["client_id"]
-        self.provider = snapshot["provider"]
-        self.issuer_url = snapshot["issuer_url"]
-
-
-class ClientDeletedEvent(EventBase):
-    """Event to notify the charm that a provider's config was deleted."""
-
-    def __init__(self, handle):
-        super().__init__(handle)
-
     def snapshot(self):
         """Save event."""
         return {}
 
     def restore(self, snapshot):
         """Restore event."""
-        pass
 
 
 class ExternalIdpRequirerEvents(ObjectEvents):
     """Event descriptor for events raised by `ExternalIdpRequirerEvents`."""
 
     client_config_changed = EventSource(ClientConfigChangedEvent)
-    client_deleted = EventSource(ClientDeletedEvent)
 
 
 class ExternalIdpRequirer(Object):
@@ -552,31 +523,24 @@ class ExternalIdpRequirer(Object):
         )
 
     def _on_provider_endpoint_relation_changed(self, event):
-        client_id = event.relation.data[event.app].get("client_id")
-        provider = event.relation.data[event.app].get("provider")
-        relation_id = event.relation.id
-
-        if client_id and provider:
-            self.on.client_config_changed.emit(
-                client_id=client_id,
-                provider_id=provider,
-                relation_id=relation_id,
-            )
-        else:
-            self.on.client_deleted.emit()
+        self.on.client_config_changed.emit()
 
     def _on_provider_endpoint_relation_departed(self, event):
-        self.on.client_deleted.emit()
+        self.on.client_config_changed.emit()
 
     def set_relation_registered_provider(self, redirect_uri, provider_id, relation_id):
         """Update the relation databag."""
-        relation = self.model.get_relation(
-            relation_name=self._relation_name, relation_id=relation_id
-        )
-        relation.data[self.model.app].update(
+        data = dict(
             redirect_uri=redirect_uri,
             provider_id=provider_id,
         )
+
+        _validate_data(data, REQUIRER_JSON_SCHEMA)
+
+        relation = self.model.get_relation(
+            relation_name=self._relation_name, relation_id=relation_id
+        )
+        relation.data[self.model.app].update(data)
 
     def get_providers(self):
         """Iterate over the relations and fetch all providers."""
@@ -585,6 +549,7 @@ class ExternalIdpRequirer(Object):
         # single object
         for relation in self.model.relations[self._relation_name]:
             data = relation.data[relation.app]
+            _validate_data(data, PROVIDER_JSON_SCHEMA)
             for p in json.loads(data["providers"]):
                 provider_type, provider = self._get_provider(p)
                 providers[provider_type].append(provider)
