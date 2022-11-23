@@ -48,8 +48,6 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._stored.set_default(invalid_config=False)
 
     def _on_config_changed(self, event):
-        self.unit.status = MaintenanceStatus("Configuring the charm")
-
         try:
             self._stored.invalid_config = False
             self.external_idp_provider.validate_client_config(self.config)
@@ -58,6 +56,7 @@ class KratosIdpIntegratorCharm(CharmBase):
             self._stored.invalid_config = True
             return
 
+        self.unit.status = MaintenanceStatus("Configuring the charm")
         self._configure_relation()
         self._on_update_status(event)
 
@@ -68,13 +67,14 @@ class KratosIdpIntegratorCharm(CharmBase):
         - If no relation exists, status is waiting
         - Else status is active
         """
-        if not self._stored.invalid_config:
-            if not self.external_idp_provider.is_ready():
-                self.unit.status = BlockedStatus("Waiting for relation with Kratos")
-            elif not self._stored.redirect_uri and self._stored.enabled:
-                self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
-            else:
-                self.unit.status = ActiveStatus()
+        if self._stored.invalid_config:
+            pass
+        elif not self.external_idp_provider.is_ready():
+            self.unit.status = BlockedStatus("Waiting for relation with Kratos")
+        elif not self._stored.redirect_uri and self._stored.enabled:
+            self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
+        else:
+            self.unit.status = ActiveStatus()
 
     def _on_redirect_uri_changed(self, event):
         self._stored.redirect_uri = event.redirect_uri

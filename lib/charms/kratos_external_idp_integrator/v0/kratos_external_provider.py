@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
@@ -6,7 +7,6 @@
 This library wraps relation endpoints using the `kratos-external-idp` interface
 and provides a Python API for both requesting Kratos to register the a client for
 communicating with an external provider.
-
 
 ## Getting Started
 
@@ -32,6 +32,7 @@ Then, to initialise the library:
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
     ExternalIdpProvider, InvalidConfigError
 )
+from ops.model import BlockedStatus
 
 class SomeCharm(CharmBase):
   def __init__(self, *args):
@@ -49,7 +50,6 @@ class SomeCharm(CharmBase):
             self.external_idp_provider.validate_client_config(self.config)
         except InvalidConfigError as e:
             self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
-            return
 
         # ...
 
@@ -61,6 +61,7 @@ class SomeCharm(CharmBase):
     def _on_ready(self, event):
         if not isinstance(self.unit.status, BlockedStatus):
             self.external_idp_provider.create_client(self.config)
+```
 """
 
 import json
