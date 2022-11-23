@@ -6,11 +6,14 @@
 
 import logging
 
-from charms.kratos_external_idp_integrator.v0.kratos_external_provider import ExternalIdpProvider
+from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
+    ExternalIdpProvider,
+    InvalidConfigError,
+)
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +26,16 @@ class KratosIdpIntegratorCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.external_idp_provider = ExternalIdpProvider(self, self.config)
+        self.external_idp_provider = ExternalIdpProvider(self)
 
         # Charm events
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.update_status, self._on_update_status)
 
         # Library events
+        self.framework.observe(self.external_idp_provider.on.ready, self._on_config_changed)
         self.framework.observe(
             self.external_idp_provider.on.redirect_uri_changed, self._on_redirect_uri_changed
-        )
-        self.framework.observe(
-            self.external_idp_provider.on.invalid_client_config, self._on_invalid_client_config
         )
 
         # Action events
@@ -46,14 +47,17 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._stored.set_default(enabled=True)
         self._stored.set_default(invalid_config=False)
 
-    @property
-    def _relation(self):
-        return self.model.get_relation(self._relation_name)
-
     def _on_config_changed(self, event):
-        self.unit.status = WaitingStatus("Configuring the charm")
-        self._stored.invalid_config = False
-        self.external_idp_provider.update_client_config(self.config)
+        self.unit.status = MaintenanceStatus("Configuring the charm")
+
+        try:
+            self._stored.invalid_config = False
+            self.external_idp_provider.validate_client_config(self.config)
+        except InvalidConfigError as e:
+            self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
+            self._stored.invalid_config = True
+            return
+
         self._configure_relation()
         self._on_update_status(event)
 
@@ -65,7 +69,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         - Else status is active
         """
         if not self._stored.invalid_config:
-            if not self._relation:
+            if not self.external_idp_provider.is_ready():
                 self.unit.status = BlockedStatus("Waiting for relation with Kratos")
             elif not self._stored.redirect_uri and self._stored.enabled:
                 self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
@@ -75,10 +79,6 @@ class KratosIdpIntegratorCharm(CharmBase):
     def _on_redirect_uri_changed(self, event):
         self._stored.redirect_uri = event.redirect_uri
         self._on_update_status(event)
-
-    def _on_invalid_client_config(self, event):
-        self._stored.invalid_config = True
-        self.unit.status = BlockedStatus(event.error)
 
     def _get_redirect_uri(self, event):
         """Get the redirect_uri from the relation and return it to the user."""
@@ -98,13 +98,13 @@ class KratosIdpIntegratorCharm(CharmBase):
 
     def _configure_relation(self):
         """Create or remove the client."""
-        if not self._relation or isinstance(self.unit.status, BlockedStatus):
+        if not self.external_idp_provider.is_ready():
             return
 
         if not self._stored.enabled:
             self.external_idp_provider.remove_client()
         else:
-            self.external_idp_provider.create_client()
+            self.external_idp_provider.create_client(self.config)
 
 
 if __name__ == "__main__":
