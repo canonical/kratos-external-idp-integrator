@@ -20,7 +20,7 @@ charmcraft fetch-lib charms.kratos_external_idp_integrator.v0.kratos_external_pr
 In the `metadata.yaml` of the charm, add the following:
 
 ```yaml
-requires:
+provides:
     kratos-external-idp:
         interface: external_provider
         limit: 1
@@ -30,7 +30,7 @@ Then, to initialise the library:
 
 ```python
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
-    ExternalIdpProvider
+    ExternalIdpProvider, InvalidConfigError
 )
 
 class SomeCharm(CharmBase):
@@ -38,21 +38,29 @@ class SomeCharm(CharmBase):
     # ...
     self.external_idp_provider = ExternalIdpProvider(self, self.config)
 
+    self.framework.observe(self.external_idp_provider.on.ready, self._on_ready)
     self.framework.observe(
         self.external_idp_provider.on.redirect_uri_changed, self._on_redirect_uri_changed
     )
-    self.framework.observe(
-        self.external_idp_provider.on.invalid_client_config, self._on_invalid_client_config
-    )
+
+    def _on_config_changed(self, event):
+        # ...
+        try:
+            self.external_idp_provider.validate_client_config(self.config)
+        except InvalidConfigError as e:
+            self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
+            return
+
+        # ...
 
     def _on_redirect_uri_changed(self, event):
         logger.info(f"The client's redirect_uri changed to {event.redirect_uri}")
         self._stored.redirect_uri = event.redirect_uri
         self._on_update_status(event)
 
-    def _on_invalid_client_config(self, event):
-        logger.info("Invalid client config")
-        self.unit.status = BlockedStatus(event.error)
+    def _on_ready(self, event):
+        if not isinstance(self.unit.status, BlockedStatus):
+            self.external_idp_provider.create_client(self.config)
 """
 
 import json
@@ -87,7 +95,7 @@ class BaseProviderConfigHandler:
     providers = []
 
     @classmethod
-    def sanitize_config(cls, config):
+    def validate_config(cls, config):
         """Validate and sanitize the user provided config."""
         config_keys = set(config.keys())
         provider = config["provider"]
@@ -115,7 +123,7 @@ class BaseProviderConfigHandler:
     @classmethod
     def handle_config(cls, config):
         """Validate the config and transform it in the relation databag expected format."""
-        config = cls.sanitize_config(config)
+        config = cls.validate_config(config)
         return cls.parse_config(config)
 
     @classmethod
@@ -230,6 +238,29 @@ allowed_providers = {
 }
 
 
+def get_provider_config_handler(config):
+    """Get the config handler for this provider."""
+    provider = config.get("provider")
+    if provider not in allowed_providers:
+        raise InvalidConfigError(
+            "Required configuration 'provider' MUST be one of the following: "
+            + ", ".join(allowed_providers)
+        )
+    return allowed_providers[provider]
+
+
+class RelationReadyEvent(EventBase):
+    """Event to notify the charm that the relation is ready."""
+
+    def snapshot(self):
+        """Save event."""
+        return {}
+
+    def restore(self, snapshot):
+        """Restore event."""
+        pass
+
+
 class RedirectURIChangedEvent(EventBase):
     """Event to notify the charm that the redirect_uri changed."""
 
@@ -246,27 +277,11 @@ class RedirectURIChangedEvent(EventBase):
         self.redirect_uri = snapshot["redirect_uri"]
 
 
-class InvalidClientConfigEvent(EventBase):
-    """Event to notify the charm that the requirer's databag is invalid."""
-
-    def __init__(self, handle, error):
-        super().__init__(handle)
-        self.error = error
-
-    def snapshot(self):
-        """Save error."""
-        return {"error": self.error}
-
-    def restore(self, snapshot):
-        """Restore error."""
-        self.error = snapshot["error"]
-
-
 class ExternalIdpProviderEvents(ObjectEvents):
     """Event descriptor for events raised by `ExternalIdpProvider`."""
 
+    ready = EventSource(RelationReadyEvent)
     redirect_uri_changed = EventSource(RedirectURIChangedEvent)
-    invalid_client_config = EventSource(InvalidClientConfigEvent)
 
 
 class ExternalIdpProvider(Object):
@@ -274,14 +289,12 @@ class ExternalIdpProvider(Object):
 
     on = ExternalIdpProviderEvents()
 
-    def __init__(self, charm, client_config, relation_name=DEFAULT_RELATION_NAME):
+    def __init__(self, charm, relation_name=DEFAULT_RELATION_NAME):
         super().__init__(charm, relation_name)
         self._charm = charm
         self._relation_name = relation_name
-        self.update_client_config(client_config)
 
         events = self._charm.on[relation_name]
-        self.framework.observe(events.relation_joined, self._on_provider_endpoint_relation_joined)
         self.framework.observe(events.relation_joined, self._on_provider_endpoint_relation_joined)
         self.framework.observe(
             events.relation_changed, self._on_provider_endpoint_relation_changed
@@ -291,11 +304,7 @@ class ExternalIdpProvider(Object):
         )
 
     def _on_provider_endpoint_relation_joined(self, event):
-        if not self._client_config:
-            return
-
-        self._set_client_config()
-        self._charm.on.update_status.emit()
+        self.on.ready.emit()
 
     def _on_provider_endpoint_relation_changed(self, event):
         data = json.loads(event.relation.data[event.app]["providers"])
@@ -307,51 +316,52 @@ class ExternalIdpProvider(Object):
     def _on_provider_endpoint_relation_departed(self, event):
         self.on.redirect_uri_changed.emit(redirect_uri="")
 
-    def create_client(self, config=None):
-        """Use the configuration to create the relation databag.
+    def is_ready(self):
+        """Checks if the relation is ready."""
+        return self._charm.model.get_relation(self._relation_name)
 
-        If the config param is used, the client_config is updated.
-        """
-        if config:
-            self.update_client_config(config)
-        return self._set_client_config()
+    def create_client(self, config):
+        """Use the configuration to create the relation databag."""
+        if not self._charm.unit.is_leader():
+            return
+
+        config = self._handle_config(config)
+        return self._set_client_data(config)
 
     def remove_client(self):
         """Remove the client config to the relation databag."""
-        # Do we need to iterate on the relations? There should never be more
-        # than one
-        for relation in self._charm.model.relations[self._relation_name]:
-            relation.data[self._charm.app].clear()
-
-    def update_client_config(self, config):
-        """Validate and update the client config."""
-        try:
-            self._client_config = self._handle_config(config)
-        except InvalidConfigError as e:
-            self._client_config = {}
-            self.on.invalid_client_config.emit(error=e.args[0])
-        self._create_secrets()
-
-    def _handle_config(self, config):
-        provider = config.get("provider")
-        if provider not in allowed_providers:
-            raise InvalidConfigError(
-                "Required configuration 'provider' MUST be one of the following: "
-                + ", ".join(allowed_providers)
-            )
-        return allowed_providers[provider].handle_config(config)
-
-    def _set_client_config(self, **kwargs):
         if not self._charm.unit.is_leader():
             return
 
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
-            relation.data[self._charm.app].update(providers=json.dumps(self._client_config))
+            relation.data[self._charm.app].clear()
 
-    def _create_secrets(self):
-        for conf in self._client_config:
+    def validate_client_config(self, config):
+        """Validate the client config.
+
+        Raises InvalidConfigError is config is invalid.
+        """
+        self._validate_config(config)
+
+    def _handle_config(self, config):
+        handler = get_provider_config_handler(config)
+        return handler.handle_config(config)
+
+    def _validate_config(self, config):
+        handler = get_provider_config_handler(config)
+        handler.validate_config(config)
+
+    def _set_client_data(self, client_config):
+        self._create_secrets(client_config)
+        # Do we need to iterate on the relations? There should never be more
+        # than one
+        for relation in self._charm.model.relations[self._relation_name]:
+            relation.data[self._charm.app].update(providers=json.dumps(client_config))
+
+    def _create_secrets(self, client_config):
+        for conf in client_config:
             backend = conf["secret_backend"]
 
             if backend == "relation":
