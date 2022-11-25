@@ -90,7 +90,9 @@ class KratosCharm(CharmBase):
     # ...
     self.external_idp_requirer = ExternalIdpRequirer(self)
 
-    self.framework.observe(self.external_idp_provider.on.client_config_changed, self._on_client_config_changed)
+    self.framework.observe(
+        self.external_idp_provider.on.client_config_changed, self._on_client_config_changed
+    )
 
     def _on_client_config_changed(self, event):
         providers = self.external_idp_requirer.get_providers()

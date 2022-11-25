@@ -43,6 +43,7 @@ def test_get_providers(harness, generic_databag, generic_kratos_config):
 
     providers = harness.charm.external_idp_requirer.get_providers()
 
+    assert providers["generic"][0].pop("relation_id") == relation_id
     assert providers == generic_kratos_config
 
 
