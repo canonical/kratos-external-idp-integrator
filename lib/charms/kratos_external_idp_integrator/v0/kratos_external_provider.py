@@ -17,8 +17,10 @@ cd some-charm
 charmcraft fetch-lib charms.kratos_external_idp_integrator.v0.kratos_external_provider
 ```
 
-In the `metadata.yaml` of the charm, add the following:
 
+To use the library from the provider side (KratosExteranlIdpIntegrator):
+
+In the `metadata.yaml` of the charm, add the following:
 ```yaml
 provides:
     kratos-external-idp:
@@ -65,6 +67,42 @@ class SomeCharm(CharmBase):
     def _on_ready(self, event):
         if not isinstance(self.unit.status, BlockedStatus):
             self.external_idp_provider.create_provider(self.config)
+```
+
+To use the library from the requirer side (Kratos):
+
+In the `metadata.yaml` of the charm, add the following:
+```yaml
+requires:
+    kratos-external-idp:
+        interface: external_provider
+```
+
+Then, to initialise the library:
+
+```python
+from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
+    ExternalIdpRequirer
+)
+
+class KratosCharm(CharmBase):
+  def __init__(self, *args):
+    # ...
+    self.external_idp_requirer = ExternalIdpRequirer(self)
+
+    self.framework.observe(self.external_idp_provider.on.client_config_changed, self._on_client_config_changed)
+
+    def _on_client_config_changed(self, event):
+        providers = self.external_idp_requirer.get_providers()
+        # Recreate the Kratos config
+        self._configure()
+        for p in providers:
+            # redirect_uri and provider_id must not change as providers come and go,
+            # maybe use hash?
+            redirect_uri, provider_id, relation_id = self._get_provider_config(p)
+            self.external_idp_requirer.set_relation_registered_provider(
+                redirect_uri, provider_id, relation_id
+            )
 ```
 """
 
@@ -549,13 +587,14 @@ class ExternalIdpRequirer(Object):
             data = relation.data[relation.app]
             _validate_data(data, PROVIDER_JSON_SCHEMA)
             for p in json.loads(data["providers"]):
-                provider_type, provider = self._get_provider(p)
+                provider_type, provider = self._get_provider(p, relation)
                 providers[provider_type].append(provider)
 
         return providers
 
-    def _get_provider(self, provider):
+    def _get_provider(self, provider, relation):
         provider = self._extract_secrets(provider)
+        provider["relation_id"] = relation.id
         provider_type = provider["provider"]
         return provider_type, provider
 
