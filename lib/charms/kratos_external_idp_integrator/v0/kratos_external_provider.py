@@ -5,7 +5,7 @@
 """# Interface library for Kratos external OIDC providers.
 
 This library wraps relation endpoints using the `kratos-external-idp` interface
-and provides a Python API for both requesting Kratos to register the a client for
+and provides a Python API for both requesting Kratos to register the the client credentials for
 communicating with an external provider.
 
 ## Getting Started
@@ -39,6 +39,7 @@ class SomeCharm(CharmBase):
     # ...
     self.external_idp_provider = ExternalIdpProvider(self, self.config)
 
+    self.framework.observe(self.on.config_changed, self._on_config_changed)
     self.framework.observe(self.external_idp_provider.on.ready, self._on_ready)
     self.framework.observe(
         self.external_idp_provider.on.redirect_uri_changed, self._on_redirect_uri_changed
@@ -47,7 +48,7 @@ class SomeCharm(CharmBase):
     def _on_config_changed(self, event):
         # ...
         try:
-            self.external_idp_provider.validate_client_config(self.config)
+            self.external_idp_provider.validate_provider_config(self.config)
         except InvalidConfigError as e:
             self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
 
@@ -60,7 +61,7 @@ class SomeCharm(CharmBase):
 
     def _on_ready(self, event):
         if not isinstance(self.unit.status, BlockedStatus):
-            self.external_idp_provider.create_client(self.config)
+            self.external_idp_provider.create_provider(self.config)
 ```
 """
 
@@ -321,16 +322,16 @@ class ExternalIdpProvider(Object):
         """Checks if the relation is ready."""
         return self._charm.model.get_relation(self._relation_name)
 
-    def create_client(self, config):
+    def create_provider(self, config):
         """Use the configuration to create the relation databag."""
         if not self._charm.unit.is_leader():
             return
 
         config = self._handle_config(config)
-        return self._set_client_data(config)
+        return self._set_provider_data(config)
 
-    def remove_client(self):
-        """Remove the client config to the relation databag."""
+    def remove_provider(self):
+        """Remove the provider config to the relation databag."""
         if not self._charm.unit.is_leader():
             return
 
@@ -339,8 +340,8 @@ class ExternalIdpProvider(Object):
         for relation in self._charm.model.relations[self._relation_name]:
             relation.data[self._charm.app].clear()
 
-    def validate_client_config(self, config):
-        """Validate the client config.
+    def validate_provider_config(self, config):
+        """Validate the provider config.
 
         Raises InvalidConfigError is config is invalid.
         """
@@ -354,15 +355,15 @@ class ExternalIdpProvider(Object):
         handler = get_provider_config_handler(config)
         handler.validate_config(config)
 
-    def _set_client_data(self, client_config):
-        self._create_secrets(client_config)
+    def _set_provider_data(self, provider_config):
+        self._create_secrets(provider_config)
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
-            relation.data[self._charm.app].update(providers=json.dumps(client_config))
+            relation.data[self._charm.app].update(providers=json.dumps(provider_config))
 
-    def _create_secrets(self, client_config):
-        for conf in client_config:
+    def _create_secrets(self, provider_config):
+        for conf in provider_config:
             backend = conf["secret_backend"]
 
             if backend == "relation":

@@ -3,22 +3,6 @@
 
 get-redirect-uri:
   description: Get the Kratos' client redirect_uri
-get-logo:
-  description: Get the external provider’s configured logo
-set-logo:
-  description: Set the external provider’s configured logo
-get-identity-schema:
-  description: Get the external provider’s configured identity schema
-set-identity-schema:
-  description: Set the external provider’s configured identity schema
-get-scopes:
-  description: Get the external provider’s configured scopes
-set-scopes:
-  description: Set the external provider’s configured scopes
-get-provider-name:
-  description: Get the external provider’s configured provider name
-set-provider-name:
-  description: Set the external provider’s configured provider name
 enable:
   description: Enable the external provider
 disable:
