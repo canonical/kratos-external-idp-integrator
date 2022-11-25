@@ -2,14 +2,15 @@
 
 ## Description
 
-This charm is used to configure an Ory Kratos charm to use an external provider. It acts as a configuration charm.
+This charm is used to configure an Ory Kratos charm to use an external provider.
 
 ## Usage
 
 ### Client registration
 
 Before deploying this charm you should go and register an oidc client with the provider you wish to use. Instructions for
-registering a client for some well known provider can be found below.
+registering a client for some well known provider can be found below. Instructions for a larger list of providers can be found at the
+Ory Kratos [docs](https://www.ory.sh/docs/kratos/social-signin/overview)
 
 Note that after registering a client you will need to provide a redirect_uri to the provider, you will get the redirect_uri
 after deploying the integrator.
