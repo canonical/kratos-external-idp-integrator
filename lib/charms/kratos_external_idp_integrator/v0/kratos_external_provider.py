@@ -444,8 +444,6 @@ class ExternalIdpProvider(Object):
         if not self._charm.unit.is_leader():
             return
 
-        data = dict(providers=json.dumps(self._client_config))
-        _validate_data(data, PROVIDER_JSON_SCHEMA)
         # Do we need to iterate on the relations? There should never be more
         # than one
         for relation in self._charm.model.relations[self._relation_name]:
