@@ -20,7 +20,6 @@ options:
   issuer_url:
     description: |
       The issuer_url, this value is only used when provider is "generic" or "auth0"
-      type: string
     type: string
   secret_backend:
     default: relation

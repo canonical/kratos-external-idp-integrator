@@ -50,7 +50,7 @@ class KratosIdpIntegratorCharm(CharmBase):
     def _on_config_changed(self, event):
         try:
             self._stored.invalid_config = False
-            self.external_idp_provider.validate_client_config(self.config)
+            self.external_idp_provider.validate_provider_config(self.config)
         except InvalidConfigError as e:
             self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
             self._stored.invalid_config = True
@@ -74,7 +74,11 @@ class KratosIdpIntegratorCharm(CharmBase):
         elif not self._stored.redirect_uri and self._stored.enabled:
             self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
         else:
-            self.unit.status = ActiveStatus()
+            msg = "Provider is ready"
+            if not self._stored.enabled:
+                msg = "Provider is disabled"
+
+            self.unit.status = ActiveStatus(msg)
 
     def _on_redirect_uri_changed(self, event):
         self._stored.redirect_uri = event.redirect_uri
@@ -97,14 +101,14 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._configure_relation()
 
     def _configure_relation(self):
-        """Create or remove the client."""
+        """Create or remove the provider."""
         if not self.external_idp_provider.is_ready():
             return
 
         if not self._stored.enabled:
-            self.external_idp_provider.remove_client()
+            self.external_idp_provider.remove_provider()
         else:
-            self.external_idp_provider.create_client(self.config)
+            self.external_idp_provider.create_provider(self.config)
 
 
 if __name__ == "__main__":
