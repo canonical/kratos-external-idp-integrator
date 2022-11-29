@@ -5,15 +5,9 @@ import json
 
 import ops
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from utils import parse_databag
 
 ops.testing.SIMULATE_CAN_CONNECT = True
-
-
-def parse_databag(data):
-    print(data)
-    data = dict(data)
-    data["providers"] = json.loads(data["providers"])
-    return data
 
 
 def test_relation(harness, config, relation_data, generic_databag):

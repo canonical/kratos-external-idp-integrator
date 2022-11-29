@@ -83,11 +83,131 @@ LIBPATCH = 1
 DEFAULT_RELATION_NAME = "kratos-external-idp"
 logger = logging.getLogger(__name__)
 
+try:
+    import jsonschema
+
+    DO_VALIDATION = True
+except ModuleNotFoundError:
+    logger.warning(
+        "The `ingress_per_unit` library needs the `jsonschema` package to be able "
+        "to do runtime data validation; without it, it will still work but validation "
+        "will be disabled. \n"
+        "It is recommended to add `jsonschema` to the 'requirements.txt' of your charm, "
+        "which will enable this feature."
+    )
+    DO_VALIDATION = False
+
+
+PROVIDER_PROVIDERS_JSON_SCHEMA = {
+    "type": "array",
+    "items": {
+        "anyOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "provider": {
+                        "type": "string",
+                        "enum": [
+                            "generic",
+                            "google",
+                            "facebook",
+                            "microsoft",
+                            "github",
+                            "apple",
+                            "gitlab",
+                            "auth0",
+                            "slack",
+                            "spotify",
+                            "discord",
+                            "twitch",
+                            "netid",
+                            "yander",
+                            "vk",
+                            "dingtalk",
+                        ],
+                    },
+                    "client_id": {"type": "string"},
+                    "client_secret": {"type": "string"},
+                    "secret_backend": {"type": "string"},
+                    "issuer_url": {"type": "string"},
+                    "tenant_id": {"type": "string"},
+                    "private_key": {"type": "string"},
+                    "private_key_id": {"type": "string"},
+                    "team_id": {"type": "string"},
+                },
+                "additionalProperties": True,
+            },
+        ],
+    },
+}
+
+PROVIDER_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "providers": PROVIDER_PROVIDERS_JSON_SCHEMA,
+    },
+}
+
+REQUIRER_PROVIDERS_JSON_SCHEMA = {
+    "type": "array",
+    "items": {
+        "anyOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "provider_id": {"type": "string"},
+                    "redirect_uri": {"type": "string"},
+                },
+                "additionalProperties": True,
+            },
+        ]
+    },
+}
+
+REQUIRER_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "providers": REQUIRER_PROVIDERS_JSON_SCHEMA,
+    },
+}
+
 
 class InvalidConfigError(Exception):
     """Internal exception that is raised if the charm config is not valid."""
 
     pass
+
+
+class DataValidationError(RuntimeError):
+    """Raised when data validation fails on relation data."""
+
+
+def _load_data(data, schema):
+    """Parses nested fields and checks whether `data` matches `schema`."""
+    if "providers" not in data:
+        raise DataValidationError("No providers key in relation data")
+
+    data = dict(data)
+    try:
+        data["providers"] = json.loads(data["providers"])
+    except json.JSONDecodeError as e:
+        raise DataValidationError(f"Failed to decode relation json: {e}")
+
+    _validate_data(data, schema)
+    return data
+
+
+def _validate_data(data, schema):
+    """Checks whether `data` matches `schema`.
+
+    Will raise DataValidationError if the data is not valid, else return None.
+    """
+    if not DO_VALIDATION:
+        return
+    try:
+        jsonschema.validate(instance=data, schema=schema)
+    except jsonschema.ValidationError as e:
+        raise DataValidationError(data, schema) from e
 
 
 class BaseProviderConfigHandler:
@@ -309,10 +429,13 @@ class ExternalIdpProvider(Object):
         self.on.ready.emit()
 
     def _on_provider_endpoint_relation_changed(self, event):
-        data = json.loads(event.relation.data[event.app]["providers"])
-        if len(data) == 0:
+        data = event.relation.data[event.app]
+        data = _load_data(data, REQUIRER_JSON_SCHEMA)
+        providers = data["providers"]
+
+        if len(providers) == 0:
             return
-        redirect_uri = data[0].get("redirect_uri")
+        redirect_uri = providers[0].get("redirect_uri")
         self.on.redirect_uri_changed.emit(redirect_uri=redirect_uri)
 
     def _on_provider_endpoint_relation_departed(self, event):
