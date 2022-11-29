@@ -568,13 +568,10 @@ class ExternalIdpRequirer(Object):
             events.relation_changed, self._on_provider_endpoint_relation_changed
         )
         self.framework.observe(
-            events.relation_departed, self._on_provider_endpoint_relation_departed
+            events.relation_departed, self._on_provider_endpoint_relation_changed
         )
 
     def _on_provider_endpoint_relation_changed(self, event):
-        self.on.client_config_changed.emit()
-
-    def _on_provider_endpoint_relation_departed(self, event):
         self.on.client_config_changed.emit()
 
     def set_relation_registered_provider(self, redirect_uri, provider_id, relation_id):
