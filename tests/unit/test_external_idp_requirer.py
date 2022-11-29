@@ -7,6 +7,7 @@ import pytest
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import ExternalIdpRequirer
 from ops.charm import CharmBase
 from ops.testing import Harness
+from utils import parse_databag
 
 EXTERNAL_IDP_RELATION = "kratos-external-idp"
 KRATOS_META = f"""
@@ -48,16 +49,19 @@ def test_get_providers(harness, generic_databag, generic_kratos_config):
 
 
 def test_set_relation_registered_provider(harness, generic_databag, generic_kratos_config):
-    expected_data = {"redirect_uri": "redirect_uri", "provider_id": "provider_id"}
+    redirect_uri = "redirect_uri"
+    provider_id = "provider_id"
+    expected_data = {"providers": [{"redirect_uri": redirect_uri, "provider_id": provider_id}]}
+
     relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
     harness.add_relation_unit(relation_id, "kratos-external-provider/0")
     generic_databag["providers"] = json.dumps(generic_databag["providers"])
     harness.update_relation_data(relation_id, "kratos-external-provider", generic_databag)
 
     harness.charm.external_idp_requirer.set_relation_registered_provider(
-        expected_data["redirect_uri"], expected_data["provider_id"], relation_id
+        redirect_uri, provider_id, relation_id
     )
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
-    assert app_data == expected_data
+    assert parse_databag(app_data) == expected_data

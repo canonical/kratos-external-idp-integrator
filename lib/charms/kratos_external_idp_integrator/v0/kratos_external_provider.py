@@ -225,6 +225,17 @@ def _load_data(data, schema):
     return data
 
 
+def _dump_data(data, schema):
+    _validate_data(data, schema)
+
+    data = dict(data)
+    try:
+        data["providers"] = json.dumps(data["providers"])
+    except json.JSONDecodeError as e:
+        raise DataValidationError(f"Failed to encode relation json: {e}")
+    return data
+
+
 def _validate_data(data, schema):
     """Checks whether `data` matches `schema`.
 
@@ -569,11 +580,15 @@ class ExternalIdpRequirer(Object):
     def set_relation_registered_provider(self, redirect_uri, provider_id, relation_id):
         """Update the relation databag."""
         data = dict(
-            redirect_uri=redirect_uri,
-            provider_id=provider_id,
+            providers=[
+                dict(
+                    redirect_uri=redirect_uri,
+                    provider_id=provider_id,
+                )
+            ]
         )
 
-        _validate_data(data, REQUIRER_JSON_SCHEMA)
+        data = _dump_data(data, REQUIRER_JSON_SCHEMA)
 
         relation = self.model.get_relation(
             relation_name=self._relation_name, relation_id=relation_id
@@ -587,8 +602,8 @@ class ExternalIdpRequirer(Object):
         # single object
         for relation in self.model.relations[self._relation_name]:
             data = relation.data[relation.app]
-            _validate_data(data, PROVIDER_JSON_SCHEMA)
-            for p in json.loads(data["providers"]):
+            data = _load_data(data, PROVIDER_JSON_SCHEMA)
+            for p in data["providers"]:
                 provider_type, provider = self._get_provider(p, relation)
                 providers[provider_type].append(provider)
 
