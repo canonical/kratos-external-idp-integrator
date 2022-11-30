@@ -185,7 +185,7 @@ class DataValidationError(RuntimeError):
 def _load_data(data, schema):
     """Parses nested fields and checks whether `data` matches `schema`."""
     if "providers" not in data:
-        raise DataValidationError("No providers key in relation data")
+        return dict(providers=[])
 
     data = dict(data)
     try:

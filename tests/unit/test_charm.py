@@ -167,7 +167,7 @@ def test_get_redirect_uri(harness, config, mock_event, relation_data):
 
     mock_event.set_results.assert_called_once()
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert mock_event.set_results.mock_calls[0].args == (dict(redirect_uri=redirect_uri),)
+    assert mock_event.set_results.mock_calls[0].args == ({"redirect-uri": redirect_uri},)
 
 
 def test_get_no_redirect_uri(harness, config, mock_event, relation_data):
