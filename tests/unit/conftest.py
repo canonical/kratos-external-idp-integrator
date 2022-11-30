@@ -53,15 +53,12 @@ def relation_data():
 @pytest.fixture
 def generic_kratos_config(config):
     return {
-        config["provider"]: [
-            {
-                "client_id": config["client_id"],
-                "provider": config["provider"],
-                "secret_backend": config["secret_backend"],
-                "client_secret": config["client_secret"],
-                "issuer_url": config["issuer_url"],
-            }
-        ]
+        "id": f"{config['provider']}_"
+        + str(hash(f'{config["client_id"]}_{config["issuer_url"]}')),
+        "client_id": config["client_id"],
+        "provider": config["provider"],
+        "client_secret": config["client_secret"],
+        "issuer_url": config["issuer_url"],
     }
 
 
