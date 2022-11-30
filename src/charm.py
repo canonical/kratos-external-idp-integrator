@@ -87,7 +87,7 @@ class KratosIdpIntegratorCharm(CharmBase):
     def _get_redirect_uri(self, event):
         """Get the redirect_uri from the relation and return it to the user."""
         if redirect_uri := self._stored.redirect_uri:
-            event.set_results({"redirect_uri": redirect_uri})
+            event.set_results({"redirect-uri": redirect_uri})
         else:
             # More descriptive message is needed?
             event.set_results("No redirect_uri found")
