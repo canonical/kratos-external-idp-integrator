@@ -95,22 +95,19 @@ class KratosCharm(CharmBase):
     )
 
     def _on_client_config_changed(self, event):
-        providers = self.external_idp_requirer.get_providers()
-        # Recreate the Kratos config
-        self._configure()
-        for p in providers:
-            # redirect_uri and provider_id must not change as providers come and go,
-            # maybe use hash?
-            redirect_uri, provider_id, relation_id = self._get_provider_config(p)
-            self.external_idp_requirer.set_relation_registered_provider(
-                redirect_uri, provider_id, relation_id
-            )
+        self._configure(event)
+
+        self.external_provider.set_relation_registered_provider(
+            some_redirect_uri, event.provider_id, event.relation_id
+        )
 ```
 """
 
+import inspect
 import json
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 
 import jsonschema
 from ops.framework import EventBase, EventSource, Object, ObjectEvents
@@ -536,15 +533,77 @@ class ExternalIdpProvider(Object):
                 raise ValueError(f"Invalid backend: {backend}")
 
 
+@dataclass
+class Provider:
+    """Class for describing an external provider."""
+
+    client_id: str
+    provider: str
+    relation_id: str
+    client_secret: str = None
+    issuer_url: str = None
+    tenant_id: str = None
+    team_id: str = None
+    private_key_id: str = None
+    private_key: str = None
+
+    @property
+    def provider_id(self):
+        """Returns a unique ID for the client credentials of the provider."""
+        if self.issuer_url:
+            id = hash(f"{self.client_id}_{self.issuer_url}")
+        elif self.tenant_id:
+            id = hash(f"{self.client_id}_{self.tenant_id}")
+        else:
+            id = hash(self.client_id)
+        return f"{self.provider}_{id}"
+
+    def config(self):
+        """Generate Kratos config for this provider."""
+        ret = {
+            "id": self.provider_id,
+            "client_id": self.client_id,
+            "provider": self.provider,
+            "client_secret": self.client_secret,
+            "issuer_url": self.issuer_url,
+            "microsoft_tenant": self.tenant_id,
+            "apple_team_id": self.team_id,
+            "apple_private_key_id": self.private_key_id,
+            "apple_private_key": self.private_key,
+        }
+        return {k: v for k, v in ret.items() if v}
+
+    @classmethod
+    def from_dict(cls, dic):
+        """Generate Provider instance from dict."""
+        return cls(**{k: v for k, v in dic.items() if k in inspect.signature(cls).parameters})
+
+
 class ClientConfigChangedEvent(EventBase):
     """Event to notify the charm that a provider's client config changed."""
 
+    def __init__(self, handle, provider):
+        super().__init__(handle)
+        self.client_id = provider.client_id
+        self.provider = provider.provider
+        self.provider_id = provider.provider_id
+        self.relation_id = provider.relation_id
+
     def snapshot(self):
         """Save event."""
-        return {}
+        return {
+            "client_id": self.client_id,
+            "provider": self.provider,
+            "provider_id": self.provider_id,
+            "relation_id": self.relation_id,
+        }
 
     def restore(self, snapshot):
         """Restore event."""
+        self.client_id = snapshot["client_id"]
+        self.provider = snapshot["provider"]
+        self.provider_id = snapshot["provider_id"]
+        self.relation_id = snapshot["relation_id"]
 
 
 class ExternalIdpRequirerEvents(ObjectEvents):
@@ -572,7 +631,15 @@ class ExternalIdpRequirer(Object):
         )
 
     def _on_provider_endpoint_relation_changed(self, event):
-        self.on.client_config_changed.emit()
+        data = event.relation.data[event.app]
+        data = _load_data(data, PROVIDER_JSON_SCHEMA)
+        providers = data["providers"]
+
+        if len(providers) == 0:
+            return
+
+        _, p = self._get_provider(providers[0], event.relation)
+        self.on.client_config_changed.emit(p)
 
     def set_relation_registered_provider(self, redirect_uri, provider_id, relation_id):
         """Update the relation databag."""
@@ -595,6 +662,7 @@ class ExternalIdpRequirer(Object):
     def get_providers(self):
         """Iterate over the relations and fetch all providers."""
         providers = defaultdict(list)
+        providers = []
         # For each relation get the client credentials and compile them into a
         # single object
         for relation in self.model.relations[self._relation_name]:
@@ -602,14 +670,16 @@ class ExternalIdpRequirer(Object):
             data = _load_data(data, PROVIDER_JSON_SCHEMA)
             for p in data["providers"]:
                 provider_type, provider = self._get_provider(p, relation)
-                providers[provider_type].append(provider)
+                # providers[provider_type].append(provider)
+                providers.append(provider)
 
         return providers
 
     def _get_provider(self, provider, relation):
         provider = self._extract_secrets(provider)
         provider["relation_id"] = relation.id
-        provider_type = provider["provider"]
+        provider = Provider.from_dict(provider)
+        provider_type = provider.provider
         return provider_type, provider
 
     def _extract_secrets(self, data):
