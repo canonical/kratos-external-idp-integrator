@@ -33,7 +33,7 @@ async def test_build_and_deploy(ops_test, config):
     """
     # build and deploy charm from local source folder
     charm = await ops_test.build_charm(".")
-    await ops_test.model.deploy(charm, application_name=APP_NAME, config=config)
+    await ops_test.model.deploy(charm, application_name=APP_NAME, config=config, series="jammy")
 
     # issuing dummy update_status just to trigger an event
     async with ops_test.fast_forward():
