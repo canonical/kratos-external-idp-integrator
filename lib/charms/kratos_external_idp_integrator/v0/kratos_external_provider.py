@@ -68,6 +68,7 @@ class SomeCharm(CharmBase):
 import json
 import logging
 
+import jsonschema
 from ops.framework import EventBase, EventSource, Object, ObjectEvents
 
 # The unique Charmhub library identifier, never change it
@@ -82,21 +83,6 @@ LIBPATCH = 1
 
 DEFAULT_RELATION_NAME = "kratos-external-idp"
 logger = logging.getLogger(__name__)
-
-try:
-    import jsonschema
-
-    DO_VALIDATION = True
-except ModuleNotFoundError:
-    logger.warning(
-        "The `ingress_per_unit` library needs the `jsonschema` package to be able "
-        "to do runtime data validation; without it, it will still work but validation "
-        "will be disabled. \n"
-        "It is recommended to add `jsonschema` to the 'requirements.txt' of your charm, "
-        "which will enable this feature."
-    )
-    DO_VALIDATION = False
-
 
 PROVIDER_PROVIDERS_JSON_SCHEMA = {
     "type": "array",
@@ -202,8 +188,6 @@ def _validate_data(data, schema):
 
     Will raise DataValidationError if the data is not valid, else return None.
     """
-    if not DO_VALIDATION:
-        return
     try:
         jsonschema.validate(instance=data, schema=schema)
     except jsonschema.ValidationError as e:
