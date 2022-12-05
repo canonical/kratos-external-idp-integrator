@@ -8,12 +8,12 @@ This charm is used to configure an Ory Kratos charm to use an external provider.
 
 ### Client registration
 
-Before deploying this charm you should go and register an oidc client with the provider you wish to use. Instructions for
-registering a client for some well known provider can be found below. Instructions for a larger list of providers can be found at the
-Ory Kratos [docs](https://www.ory.sh/docs/kratos/social-signin/overview)
+Before deploying this charm you should register an oidc client with the provider you wish to use. Instructions for
+registering a client for some well known providers can be found below. Instructions for a larger list of providers can be found at the
+Ory Kratos [docs](https://www.ory.sh/docs/kratos/social-signin/overview).
 
-Note that after registering a client you will need to provide a redirect_uri to the provider, you will get the redirect_uri
-after deploying the integrator.
+Note that after registering a client you will need to provide a redirect_uri to the provider. It can be fetched
+once the integrator charm is deployed.
 
 #### Azure AD
 
@@ -21,16 +21,21 @@ Instructions for registering a client on Azure AD can be found [here](https://le
 
 #### Okta
 
-Instructions for registering a client on Azure AD can be found [here](https://developer.okta.com/docs/guides/find-your-app-credentials/main/).
+Instructions for registering a client on Okta can be found [here](https://developer.okta.com/docs/guides/find-your-app-credentials/main/).
 
 ### Deployment
 
-For the kratos-external-idp-integrator charm to operate you need to deloy it, configure it and relate to a kratos charm.:
+For the `kratos-external-idp-integrator` charm to be operative you need to deploy it, configure it and relate to the kratos charm.:
 ```commandline
 juju deploy kratos-external-provider-integrator
-juju config kratos-external-provider-integrator ...
+juju config kratos-external-provider-integrator \
+    client_id={client_id} \
+    client_secret={client_secret} \
+    provider={provider}
 juju relate kratos-external-provider-integrator kratos
 ```
+
+Note that depending on the type of the provider different configurations may be necessary.
 
 ### Getting the redirect_uri
 
