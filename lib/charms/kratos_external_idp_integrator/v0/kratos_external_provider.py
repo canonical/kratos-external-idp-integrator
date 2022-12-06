@@ -17,8 +17,7 @@ cd some-charm
 charmcraft fetch-lib charms.kratos_external_idp_integrator.v0.kratos_external_provider
 ```
 
-
-To use the library from the provider side (KratosExteranlIdpIntegrator):
+To use the library from the provider side (KratosExternalIdpIntegrator):
 
 In the `metadata.yaml` of the charm, add the following:
 ```yaml
