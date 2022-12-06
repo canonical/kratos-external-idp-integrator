@@ -26,6 +26,9 @@ provides:
         limit: 1
 ```
 
+Next add the `jsonschema` python package to your charm's `requirements.txt`, so that the
+library can validate the incoming relation databags.
+
 Then, to initialise the library:
 
 ```python
