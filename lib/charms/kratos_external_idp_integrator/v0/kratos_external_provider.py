@@ -102,6 +102,7 @@ class KratosCharm(CharmBase):
 ```
 """
 
+import hashlib
 import inspect
 import json
 import logging
@@ -550,11 +551,11 @@ class Provider:
     def provider_id(self):
         """Returns a unique ID for the client credentials of the provider."""
         if self.issuer_url:
-            id = hash(f"{self.client_id}_{self.issuer_url}")
+            id = hashlib.sha1(f"{self.client_id}_{self.issuer_url}".encode()).hexdigest()
         elif self.tenant_id:
-            id = hash(f"{self.client_id}_{self.tenant_id}")
+            id = hashlib.sha1(f"{self.client_id}_{self.tenant_id}".encode()).hexdigest()
         else:
-            id = hash(self.client_id)
+            id = hashlib.sha1(self.client_id.encode()).hexdigest()
         return f"{self.provider}_{id}"
 
     def config(self):
