@@ -2,12 +2,13 @@
 # See LICENSE file for licensing details.
 
 import json
+from typing import Any, Dict, Generator
 
 import pytest
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import ExternalIdpRequirer
 from ops.charm import CharmBase
 from ops.testing import Harness
-from utils import parse_databag
+from utils import parse_databag  # type: ignore
 
 EXTERNAL_IDP_RELATION = "kratos-external-idp"
 KRATOS_META = f"""
@@ -21,14 +22,14 @@ requires:
 
 
 class EndpointAggregatorCharm(CharmBase):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any) -> None:
         super().__init__(*args)
 
         self.external_idp_requirer = ExternalIdpRequirer(self, relation_name=EXTERNAL_IDP_RELATION)
 
 
 @pytest.fixture
-def harness():
+def harness() -> Generator[Harness, None, None]:
     harness = Harness(EndpointAggregatorCharm, meta=KRATOS_META)
     harness.set_leader(True)
     harness.begin_with_initial_hooks()
@@ -36,7 +37,9 @@ def harness():
     harness.cleanup()
 
 
-def test_get_providers(harness, generic_databag, generic_kratos_config):
+def test_get_providers(
+    harness: Harness, generic_databag: Dict, generic_kratos_config: Dict
+) -> None:
     relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
     harness.add_relation_unit(relation_id, "kratos-external-provider/0")
     generic_databag["providers"] = json.dumps(generic_databag["providers"])
@@ -49,7 +52,7 @@ def test_get_providers(harness, generic_databag, generic_kratos_config):
     assert provider.config() == generic_kratos_config
 
 
-def test_set_relation_registered_provider(harness, generic_databag, generic_kratos_config):
+def test_set_relation_registered_provider(harness: Harness, generic_databag: Dict) -> None:
     redirect_uri = "redirect_uri"
     provider_id = "provider_id"
     expected_data = {"providers": [{"redirect_uri": redirect_uri, "provider_id": provider_id}]}
