@@ -192,8 +192,7 @@ def test_get_no_redirect_uri(harness: Harness, config: Dict, mock_event: MagicMo
 
     harness.charm._get_redirect_uri(mock_event)
 
-    mock_event.set_results.assert_called_once()
-    assert mock_event.set_results.mock_calls[0].args == ("No redirect_uri found",)
+    mock_event.fail.assert_called_once_with("No redirect_uri found")
 
 
 def test_disable(
