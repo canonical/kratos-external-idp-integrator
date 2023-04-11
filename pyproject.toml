@@ -43,7 +43,7 @@ copyright-regexp = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+%(author)s"
 [tool.mypy]
 pretty = true
 mypy_path = "./src:./lib/:./tests"
-# Exclude non-hydra libraries
+# Exclude non-integrator libraries
 exclude = 'lib/charms/((?!kratos_external_idp_integrator/).)'
 follow_imports = "silent"
 warn_redundant_casts = true
