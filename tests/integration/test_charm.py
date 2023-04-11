@@ -5,9 +5,11 @@
 
 import logging
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import yaml
+from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ APP_NAME = METADATA["name"]
 
 
 @pytest.fixture
-def config():
+def config() -> Dict:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -26,7 +28,7 @@ def config():
 
 
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test, config):
+async def test_build_and_deploy(ops_test: OpsTest, config: Dict) -> None:
     """Build the charm-under-test and deploy it together with related charms.
 
     Assert on the unit status before any relations/configurations take place.

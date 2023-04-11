@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import json
+from typing import Dict, Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +12,7 @@ from charm import KratosIdpIntegratorCharm
 
 
 @pytest.fixture
-def config():
+def config() -> Dict:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -22,7 +23,7 @@ def config():
 
 
 @pytest.fixture
-def generic_databag(config):
+def generic_databag(config: Dict) -> Dict:
     return {
         "providers": [
             {
@@ -37,7 +38,7 @@ def generic_databag(config):
 
 
 @pytest.fixture
-def relation_data():
+def relation_data() -> Dict:
     return {
         "providers": json.dumps(
             [
@@ -51,7 +52,7 @@ def relation_data():
 
 
 @pytest.fixture
-def generic_kratos_config(config):
+def generic_kratos_config(config: Dict) -> Dict:
     return {
         "id": "generic_c1b858ba120b6a62d17865256fab2617b727ab27",
         "client_id": config["client_id"],
@@ -62,7 +63,7 @@ def generic_kratos_config(config):
 
 
 @pytest.fixture
-def microsoft_config():
+def microsoft_config() -> Dict:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -73,7 +74,7 @@ def microsoft_config():
 
 
 @pytest.fixture
-def apple_config():
+def apple_config() -> Dict:
     return {
         "client_id": "client_id",
         "provider": "apple",
@@ -85,7 +86,7 @@ def apple_config():
 
 
 @pytest.fixture
-def invalid_provider_config():
+def invalid_provider_config() -> Dict:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -95,14 +96,14 @@ def invalid_provider_config():
 
 
 @pytest.fixture
-def mock_event():
+def mock_event() -> MagicMock:
     event = MagicMock()
     event.set_results = MagicMock()
     return event
 
 
 @pytest.fixture
-def harness():
+def harness() -> Generator[Harness, None, None]:
     harness = Harness(KratosIdpIntegratorCharm)
     harness.set_leader(True)
     harness.begin_with_initial_hooks()

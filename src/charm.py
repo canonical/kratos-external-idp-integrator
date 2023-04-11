@@ -5,12 +5,14 @@
 """A Juju charm for integrating Ory Kratos with and external IdP."""
 
 import logging
+from typing import Any
 
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
     ExternalIdpProvider,
     InvalidConfigError,
+    RedirectURIChangedEvent,
 )
-from ops.charm import CharmBase
+from ops.charm import ActionEvent, CharmBase, ConfigChangedEvent, EventBase
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
@@ -24,7 +26,7 @@ class KratosIdpIntegratorCharm(CharmBase):
     _stored = StoredState()
     _relation_name = "kratos-external-idp"
 
-    def __init__(self, *args):
+    def __init__(self, *args: Any) -> None:
         super().__init__(*args)
         self.external_idp_provider = ExternalIdpProvider(self)
 
@@ -47,7 +49,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._stored.set_default(enabled=True)
         self._stored.set_default(invalid_config=False)
 
-    def _on_config_changed(self, event):
+    def _on_config_changed(self, event: ConfigChangedEvent) -> None:
         try:
             self._stored.invalid_config = False
             self.external_idp_provider.validate_provider_config(self.config)
@@ -60,7 +62,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         self._configure_relation()
         self._on_update_status(event)
 
-    def _on_update_status(self, event):
+    def _on_update_status(self, event: EventBase) -> None:
         """Set the unit status.
 
         - If unit is blocked, leave it that way (it means that mandatory config is missing)
@@ -80,27 +82,27 @@ class KratosIdpIntegratorCharm(CharmBase):
 
             self.unit.status = ActiveStatus(msg)
 
-    def _on_redirect_uri_changed(self, event):
+    def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
         self._stored.redirect_uri = event.redirect_uri
         self._on_update_status(event)
 
-    def _get_redirect_uri(self, event):
+    def _get_redirect_uri(self, event: ActionEvent) -> None:
         """Get the redirect_uri from the relation and return it to the user."""
         if redirect_uri := self._stored.redirect_uri:
             event.set_results({"redirect-uri": redirect_uri})
         else:
             # More descriptive message is needed?
-            event.set_results("No redirect_uri found")
+            event.fail("No redirect_uri found")
 
-    def _enable(self, event):
+    def _enable(self, event: ActionEvent) -> None:
         self._stored.enabled = True
         self._configure_relation()
 
-    def _disable(self, event):
+    def _disable(self, event: ActionEvent) -> None:
         self._stored.enabled = False
         self._configure_relation()
 
-    def _configure_relation(self):
+    def _configure_relation(self) -> None:
         """Create or remove the provider."""
         if not self.external_idp_provider.is_ready():
             return
