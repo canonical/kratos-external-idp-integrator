@@ -47,5 +47,5 @@ jobs:
         if: failure()
 
       - name: Get juju logs
-        run: juju debug-log --replay --include hydra/0
+        run: juju debug-log --replay --include kratos-external-idp-integrator/0
         if: failure()
