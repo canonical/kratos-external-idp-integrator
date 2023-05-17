@@ -37,13 +37,12 @@ class KratosIdpIntegratorCharm(CharmBase):
         # Library events
         self.framework.observe(self.external_idp_provider.on.ready, self._on_config_changed)
         self.framework.observe(
-            self.external_idp_provider.on.redirect_uri_changed, self._on_redirect_uri_changed
+            self.external_idp_provider.on.redirect_uri_changed, self._on_update_status
         )
 
         # Action events
         self.framework.observe(self.on.get_redirect_uri_action, self._get_redirect_uri)
 
-        self._stored.set_default(redirect_uri="")
         self._stored.set_default(invalid_config=False)
 
     def _on_config_changed(self, event: ConfigChangedEvent) -> None:
@@ -70,20 +69,16 @@ class KratosIdpIntegratorCharm(CharmBase):
             pass
         elif not self.external_idp_provider.is_ready():
             self.unit.status = BlockedStatus("Waiting for relation with Kratos")
-        elif not self._stored.redirect_uri and self.config["enabled"]:
+        elif not self.external_idp_provider.get_redirect_uri() and self.config["enabled"]:
             self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
         elif not self.config["enabled"]:
             self.unit.status = ActiveStatus("Provider is disabled")
         else:
             self.unit.status = ActiveStatus("Provider is ready")
 
-    def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
-        self._stored.redirect_uri = event.redirect_uri
-        self._on_update_status(event)
-
     def _get_redirect_uri(self, event: ActionEvent) -> None:
         """Get the redirect_uri from the relation and return it to the user."""
-        if redirect_uri := self._stored.redirect_uri:
+        if redirect_uri := self.external_idp_provider.get_redirect_uri():
             event.set_results({"redirect-uri": redirect_uri})
         else:
             # More descriptive message is needed?

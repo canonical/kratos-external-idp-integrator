@@ -518,6 +518,29 @@ class ExternalIdpProvider(Object):
         for relation in self._charm.model.relations[self._relation_name]:
             relation.data[self._charm.app].clear()
 
+    def get_redirect_uri(self, relation_id: Optional[int] = None) -> str:
+        if not self.model.unit.is_leader():
+            return
+
+        try:
+            relation = self.model.get_relation(
+                relation_name=self._relation_name, relation_id=relation_id
+            )
+        except TooManyRelatedAppsError:
+            raise RuntimeError("More than one relations are defined. Please provide a relation_id")
+
+        if not relation or not relation.app:
+            return
+
+        data = relation.data[relation.app]
+        data = _load_data(data, REQUIRER_JSON_SCHEMA)
+        providers = data["providers"]
+
+        if len(providers) == 0:
+            return
+
+        return providers[0].get("redirect_uri")
+
     def validate_provider_config(self, config: Mapping) -> None:
         """Validate the provider config.
 
