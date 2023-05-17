@@ -261,6 +261,7 @@ class BaseProviderConfigHandler:
 
     mandatory_fields = {"provider", "client_id", "secret_backend", "scope"}
     optional_fields = {"provider_id", "jsonnet_mapper"}
+    excluded_fields = {"enabled"}
     providers: List[str] = []
 
     @classmethod
@@ -288,7 +289,8 @@ class BaseProviderConfigHandler:
             )
 
         for key in config_keys:
-            logger.warn(f"Invalid config '{key}' for provider '{provider}' will be ignored")
+            if key not in cls.excluded_fields:
+                logger.warn(f"Invalid config '{key}' for provider '{provider}' will be ignored")
 
         return {key: value for key, value in config.items() if key not in config_keys}
 

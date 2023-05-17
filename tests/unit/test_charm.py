@@ -232,19 +232,17 @@ def test_disable(
     config: Dict,
     generic_databag: Dict,
     relation_data: Dict,
-    mock_event: MagicMock,
 ) -> None:
     harness.update_config(config)
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
-
-    harness.charm._disable(mock_event)
+    harness.update_config(dict(enabled=False, **config))
 
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert app_data == {}
 
-    harness.charm._enable(mock_event)
+    harness.update_config(dict(enabled=True, **config))
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
     assert parse_databag(app_data) == generic_databag

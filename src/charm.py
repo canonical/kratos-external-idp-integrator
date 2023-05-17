@@ -42,11 +42,8 @@ class KratosIdpIntegratorCharm(CharmBase):
 
         # Action events
         self.framework.observe(self.on.get_redirect_uri_action, self._get_redirect_uri)
-        self.framework.observe(self.on.enable_action, self._enable)
-        self.framework.observe(self.on.disable_action, self._disable)
 
         self._stored.set_default(redirect_uri="")
-        self._stored.set_default(enabled=True)
         self._stored.set_default(invalid_config=False)
 
     def _on_config_changed(self, event: ConfigChangedEvent) -> None:
@@ -73,14 +70,12 @@ class KratosIdpIntegratorCharm(CharmBase):
             pass
         elif not self.external_idp_provider.is_ready():
             self.unit.status = BlockedStatus("Waiting for relation with Kratos")
-        elif not self._stored.redirect_uri and self._stored.enabled:
+        elif not self._stored.redirect_uri and self.config["enabled"]:
             self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
+        elif not self.config["enabled"]:
+            self.unit.status = ActiveStatus("Provider is disabled")
         else:
-            msg = "Provider is ready"
-            if not self._stored.enabled:
-                msg = "Provider is disabled"
-
-            self.unit.status = ActiveStatus(msg)
+            self.unit.status = ActiveStatus("Provider is ready")
 
     def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
         self._stored.redirect_uri = event.redirect_uri
@@ -94,20 +89,12 @@ class KratosIdpIntegratorCharm(CharmBase):
             # More descriptive message is needed?
             event.fail("No redirect_uri found")
 
-    def _enable(self, event: ActionEvent) -> None:
-        self._stored.enabled = True
-        self._configure_relation()
-
-    def _disable(self, event: ActionEvent) -> None:
-        self._stored.enabled = False
-        self._configure_relation()
-
     def _configure_relation(self) -> None:
         """Create or remove the provider."""
         if not self.external_idp_provider.is_ready():
             return
 
-        if not self._stored.enabled:
+        if not self.config["enabled"]:
             self.external_idp_provider.remove_provider()
         else:
             self.external_idp_provider.create_provider(self.config)
