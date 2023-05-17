@@ -52,6 +52,40 @@ def test_get_providers(
     assert provider.config() == generic_kratos_config
 
 
+def test_get_providers_with_provider_id(
+    harness: Harness, generic_databag: Dict, generic_kratos_config: Dict
+) -> None:
+    generic_databag["providers"][0]["provider_id"] = "id"
+    generic_kratos_config["id"] = "id"
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
+    harness.add_relation_unit(relation_id, "kratos-external-provider/0")
+    generic_databag["providers"] = json.dumps(generic_databag["providers"])
+    harness.update_relation_data(relation_id, "kratos-external-provider", generic_databag)
+
+    providers = harness.charm.external_idp_requirer.get_providers()
+    provider = providers[0]
+
+    assert provider.relation_id == relation_id
+    assert provider.config() == generic_kratos_config
+
+
+def test_get_providers_with_jsonnet(
+    harness: Harness, generic_databag: Dict, generic_kratos_config: Dict, jsonnet: str
+) -> None:
+    generic_databag["providers"][0]["jsonnet"] = jsonnet
+    generic_kratos_config["jsonnet"] = jsonnet
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
+    harness.add_relation_unit(relation_id, "kratos-external-provider/0")
+    generic_databag["providers"] = json.dumps(generic_databag["providers"])
+    harness.update_relation_data(relation_id, "kratos-external-provider", generic_databag)
+
+    providers = harness.charm.external_idp_requirer.get_providers()
+    provider = providers[0]
+
+    assert provider.relation_id == relation_id
+    assert provider.config() == generic_kratos_config
+
+
 def test_set_relation_registered_provider(harness: Harness, generic_databag: Dict) -> None:
     redirect_uri = "redirect_uri"
     provider_id = "provider_id"

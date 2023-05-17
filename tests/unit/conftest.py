@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 import json
+from textwrap import dedent
 from typing import Dict, Generator
 from unittest.mock import MagicMock
 
@@ -19,6 +20,7 @@ def config() -> Dict:
         "provider": "generic",
         "issuer_url": "http://example.com",
         "secret_backend": "relation",
+        "scope": "profile email  address  phone",
     }
 
 
@@ -32,6 +34,7 @@ def generic_databag(config: Dict) -> Dict:
                 "secret_backend": config["secret_backend"],
                 "client_secret": config["client_secret"],
                 "issuer_url": config["issuer_url"],
+                "scope": config["scope"],
             }
         ]
     }
@@ -59,6 +62,7 @@ def generic_kratos_config(config: Dict) -> Dict:
         "provider": config["provider"],
         "client_secret": config["client_secret"],
         "issuer_url": config["issuer_url"],
+        "scope": config["scope"].split(" "),
     }
 
 
@@ -109,3 +113,23 @@ def harness() -> Generator[Harness, None, None]:
     harness.begin_with_initial_hooks()
     yield harness
     harness.cleanup()
+
+
+@pytest.fixture
+def jsonnet() -> str:
+    return dedent("""
+        local claims = {
+            email_verified: false,
+        } + std.extVar('claims');
+
+        {
+            identity: {
+                traits: {
+                    [if 'email' in claims && claims.email_verified then 'email' else null]: claims.email,
+                    [if 'name' in claims then 'name' else null]: claims.name,
+                    [if 'given_name' in claims then 'given_name' else null]: claims.given_name,
+                    [if 'family_name' in claims then 'family_name' else null]: claims.family_name,
+                },
+            },
+        }"""
+    )

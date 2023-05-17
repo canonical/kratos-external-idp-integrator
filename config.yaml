@@ -38,3 +38,34 @@ options:
   apple_private_key:
     description: The private key downloaded from Apple. To be used only with apple providers.
     type: string
+  jsonnet:
+    description: |
+      The jsonnet mapper that will be used for mapping the external idp claims to kratos attributes.
+      For example:
+
+      local claims = {
+        email_verified: false,
+      } + std.extVar('claims');
+
+      {
+        identity: {
+          traits: {
+            [if 'email' in claims && claims.email_verified then 'email' else null]: claims.email,
+            [if 'name' in claims then 'name' else null]: claims.name,
+            [if 'given_name' in claims then 'given_name' else null]: claims.given_name,
+            [if 'family_name' in claims then 'family_name' else null]: claims.family_name,
+          },
+        },
+      }
+
+      For more info see https://www.ory.sh/docs/kratos/reference/jsonnet.
+    type: string
+  provider_id:
+    description: |
+      The provider's ID to be used in Kratos. The redirect_uri is generated based on this.
+      You must not have 2 providers with the same ID registered in Kratos.
+    type: string
+  scope:
+    description: Space separated list of allowed scopes for the provider.
+    type: string
+    default: profile email address phone
