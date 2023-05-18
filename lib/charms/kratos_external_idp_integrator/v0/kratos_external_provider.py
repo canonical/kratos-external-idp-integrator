@@ -119,7 +119,7 @@ from ops.charm import (
     RelationJoinedEvent,
 )
 from ops.framework import EventBase, EventSource, Handle, Object, ObjectEvents
-from ops.model import Relation
+from ops.model import Relation, TooManyRelatedAppsError
 
 # The unique Charmhub library identifier, never change it
 LIBID = "33040051de7f43a8bb43349f2b037dfc"
@@ -519,6 +519,7 @@ class ExternalIdpProvider(Object):
             relation.data[self._charm.app].clear()
 
     def get_redirect_uri(self, relation_id: Optional[int] = None) -> str:
+        """Get the kratos client's redirect_uri."""
         if not self.model.unit.is_leader():
             return
 

@@ -10,7 +10,6 @@ from typing import Any
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
     ExternalIdpProvider,
     InvalidConfigError,
-    RedirectURIChangedEvent,
 )
 from ops.charm import ActionEvent, CharmBase, ConfigChangedEvent, EventBase
 from ops.framework import StoredState
