@@ -117,7 +117,8 @@ def harness() -> Generator[Harness, None, None]:
 
 @pytest.fixture
 def jsonnet() -> str:
-    return dedent("""
+    return dedent(
+        """
         local claims = {
             email_verified: false,
         } + std.extVar('claims');

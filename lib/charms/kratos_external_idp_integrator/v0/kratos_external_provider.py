@@ -118,7 +118,7 @@ from ops.charm import (
     RelationJoinedEvent,
 )
 from ops.framework import EventBase, EventSource, Handle, Object, ObjectEvents
-from ops.model import Relation, TooManyRelatedAppsError
+from ops.model import Relation
 
 # The unique Charmhub library identifier, never change it
 LIBID = "33040051de7f43a8bb43349f2b037dfc"
