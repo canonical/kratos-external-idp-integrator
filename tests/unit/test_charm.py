@@ -219,8 +219,36 @@ def test_get_redirect_uri(
     assert mock_event.set_results.mock_calls[0].args == ({"redirect-uri": redirect_uri},)
 
 
-def test_get_no_redirect_uri(harness: Harness, config: Dict, mock_event: MagicMock) -> None:
+def test_get_redirect_uri_without_relation(
+    harness: Harness, config: Dict, mock_event: MagicMock
+) -> None:
     harness.update_config(config)
+
+    harness.charm._get_redirect_uri(mock_event)
+
+    mock_event.fail.assert_called_once_with("No redirect_uri found")
+
+
+def test_get_redirect_uri_without_relation_data(
+    harness: Harness, config: Dict, mock_event: MagicMock
+) -> None:
+    harness.update_config(config)
+    harness.add_relation("kratos-external-idp", "kratos-app")
+
+    harness.charm._get_redirect_uri(mock_event)
+
+    mock_event.fail.assert_called_once_with("No redirect_uri found")
+
+
+def test_get_redirect_uri_without_leadership(
+    harness: Harness, config: Dict, mock_event: MagicMock, relation_data: Dict
+) -> None:
+    harness.set_leader(False)
+    harness.update_config(config)
+
+    harness.update_config(config)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
+    harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     harness.charm._get_redirect_uri(mock_event)
 
