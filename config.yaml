@@ -38,7 +38,7 @@ options:
   apple_private_key:
     description: The private key downloaded from Apple. To be used only with apple providers.
     type: string
-  jsonnet:
+  jsonnet_mapper:
     description: |
       The jsonnet mapper that will be used for mapping the external idp claims to kratos attributes.
       For example:

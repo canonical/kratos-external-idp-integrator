@@ -102,6 +102,7 @@ class KratosCharm(CharmBase):
 ```
 """
 
+import base64
 import hashlib
 import inspect
 import json
@@ -128,7 +129,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 3
+LIBPATCH = 4
 
 DEFAULT_RELATION_NAME = "kratos-external-idp"
 logger = logging.getLogger(__name__)
@@ -171,7 +172,7 @@ PROVIDER_PROVIDERS_JSON_SCHEMA = {
                     "scope": {"type": "string"},
                     "team_id": {"type": "string"},
                     "provider_id": {"type": "string"},
-                    "jsonnet": {"type": "string"},
+                    "jsonnet_mapper": {"type": "string"},
                 },
                 "additionalProperties": True,
             },
@@ -259,7 +260,7 @@ class BaseProviderConfigHandler:
     """The base class for parsing a provider's config."""
 
     mandatory_fields = {"provider", "client_id", "secret_backend", "scope"}
-    optional_fields = {"provider_id", "jsonnet"}
+    optional_fields = {"provider_id", "jsonnet_mapper"}
     providers: List[str] = []
 
     @classmethod
@@ -565,7 +566,7 @@ class Provider:
     team_id: Optional[str] = None
     private_key_id: Optional[str] = None
     private_key: Optional[str] = None
-    jsonnet: Optional[str] = None
+    jsonnet_mapper: Optional[str] = None
     id: Optional[str] = None
 
     @property
@@ -595,7 +596,9 @@ class Provider:
             "client_secret": self.client_secret,
             "issuer_url": self.issuer_url,
             "scope": self.scope.split(" "),
-            "jsonnet": self.jsonnet,
+            "mapper_url": base64.b64encode(self.jsonnet_mapper.encode()).decode()
+            if self.jsonnet_mapper
+            else None,
             "microsoft_tenant": self.tenant_id,
             "apple_team_id": self.team_id,
             "apple_private_key_id": self.private_key_id,

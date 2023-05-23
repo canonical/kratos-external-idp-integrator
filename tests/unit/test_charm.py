@@ -51,8 +51,8 @@ def test_provider_id_config(
 def test_jsonnet_config(
     harness: Harness, config: Dict, relation_data: Dict, generic_databag: Dict, jsonnet: str
 ) -> None:
-    harness.update_config(dict(jsonnet=jsonnet, **config))
-    generic_databag["providers"][0]["jsonnet"] = jsonnet
+    harness.update_config(dict(jsonnet_mapper=jsonnet, **config))
+    generic_databag["providers"][0]["jsonnet_mapper"] = jsonnet
     relation_id = harness.add_relation("kratos-external-idp", "kratos")
     harness.add_relation_unit(relation_id, "kratos/0")
 
