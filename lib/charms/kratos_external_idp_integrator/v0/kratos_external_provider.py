@@ -518,10 +518,10 @@ class ExternalIdpProvider(Object):
         for relation in self._charm.model.relations[self._relation_name]:
             relation.data[self._charm.app].clear()
 
-    def get_redirect_uri(self, relation_id: Optional[int] = None) -> str:
+    def get_redirect_uri(self, relation_id: Optional[int] = None) -> Optional[str]:
         """Get the kratos client's redirect_uri."""
         if not self.model.unit.is_leader():
-            return
+            return None
 
         try:
             relation = self.model.get_relation(
@@ -531,14 +531,14 @@ class ExternalIdpProvider(Object):
             raise RuntimeError("More than one relations are defined. Please provide a relation_id")
 
         if not relation or not relation.app:
-            return
+            return None
 
         data = relation.data[relation.app]
         data = _load_data(data, REQUIRER_JSON_SCHEMA)
         providers = data["providers"]
 
         if len(providers) == 0:
-            return
+            return None
 
         return providers[0].get("redirect_uri")
 

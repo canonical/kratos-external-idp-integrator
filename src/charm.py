@@ -64,7 +64,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         - If no relation exists, status is waiting
         - Else status is active
         """
-        if self._stored.invalid_config:
+        if self._stored.invalid_config is True:
             pass
         elif not self.external_idp_provider.is_ready():
             self.unit.status = BlockedStatus("Waiting for relation with Kratos")
