@@ -20,7 +20,7 @@ def config() -> Dict:
         "provider": "generic",
         "issuer_url": "http://example.com",
         "secret_backend": "relation",
-        "scope": "profile email  address  phone",
+        "scope": "profile email address phone",
     }
 
 
