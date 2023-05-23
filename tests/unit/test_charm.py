@@ -33,6 +33,36 @@ def test_relation(
     assert parse_databag(app_data) == generic_databag
 
 
+def test_provider_id_config(
+    harness: Harness, config: Dict, relation_data: Dict, generic_databag: Dict
+) -> None:
+    harness.update_config(dict(provider_id="id", **config))
+    generic_databag["providers"][0]["provider_id"] = "id"
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+
+    unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert unit_data == {}
+    assert parse_databag(app_data) == generic_databag
+
+
+def test_jsonnet_config(
+    harness: Harness, config: Dict, relation_data: Dict, generic_databag: Dict, jsonnet: str
+) -> None:
+    harness.update_config(dict(jsonnet=jsonnet, **config))
+    generic_databag["providers"][0]["jsonnet"] = jsonnet
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+
+    unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert unit_data == {}
+    assert parse_databag(app_data) == generic_databag
+
+
 def test_extra_config(
     harness: Harness,
     config: Dict,
@@ -109,6 +139,7 @@ def test_microsoft_config(harness: Harness, microsoft_config: Dict, relation_dat
                 "secret_backend": microsoft_config["secret_backend"],
                 "tenant_id": microsoft_config["microsoft_tenant_id"],
                 "client_secret": microsoft_config["client_secret"],
+                "scope": "profile email address phone",
             }
         ]
     }
@@ -145,6 +176,7 @@ def test_apple_config(harness: Harness, apple_config: Dict, relation_data: Dict)
                 "team_id": "apple_team_id",
                 "private_key_id": "apple_private_key_id",
                 "private_key": "apple_private_key",
+                "scope": "profile email address phone",
             }
         ]
     }
