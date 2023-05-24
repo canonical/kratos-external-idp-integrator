@@ -1,6 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import base64
 import json
 from typing import Any, Dict, Generator
 
@@ -72,8 +73,8 @@ def test_get_providers_with_provider_id(
 def test_get_providers_with_jsonnet(
     harness: Harness, generic_databag: Dict, generic_kratos_config: Dict, jsonnet: str
 ) -> None:
-    generic_databag["providers"][0]["jsonnet"] = jsonnet
-    generic_kratos_config["jsonnet"] = jsonnet
+    generic_databag["providers"][0]["jsonnet_mapper"] = jsonnet
+    generic_kratos_config["mapper_url"] = base64.b64encode(jsonnet.encode()).decode()
     relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
     harness.add_relation_unit(relation_id, "kratos-external-provider/0")
     generic_databag["providers"] = json.dumps(generic_databag["providers"])
