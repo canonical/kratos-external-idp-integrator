@@ -683,6 +683,9 @@ class ExternalIdpRequirer(Object):
         self, redirect_uri: str, provider_id: str, relation_id: int
     ) -> None:
         """Update the relation databag."""
+        if not self._charm.unit.is_leader():
+            return
+
         data = dict(
             providers=[
                 dict(
