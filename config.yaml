@@ -69,3 +69,7 @@ options:
     description: Space separated list of allowed scopes for the provider.
     type: string
     default: profile email address phone
+  enabled:
+    description: Controls whether the provider is enabled.
+    type: boolean
+    default: True

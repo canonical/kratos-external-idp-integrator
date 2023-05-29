@@ -10,7 +10,6 @@ from typing import Any
 from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
     ExternalIdpProvider,
     InvalidConfigError,
-    RedirectURIChangedEvent,
 )
 from ops.charm import ActionEvent, CharmBase, ConfigChangedEvent, EventBase
 from ops.framework import StoredState
@@ -37,16 +36,12 @@ class KratosIdpIntegratorCharm(CharmBase):
         # Library events
         self.framework.observe(self.external_idp_provider.on.ready, self._on_config_changed)
         self.framework.observe(
-            self.external_idp_provider.on.redirect_uri_changed, self._on_redirect_uri_changed
+            self.external_idp_provider.on.redirect_uri_changed, self._on_update_status
         )
 
         # Action events
         self.framework.observe(self.on.get_redirect_uri_action, self._get_redirect_uri)
-        self.framework.observe(self.on.enable_action, self._enable)
-        self.framework.observe(self.on.disable_action, self._disable)
 
-        self._stored.set_default(redirect_uri="")
-        self._stored.set_default(enabled=True)
         self._stored.set_default(invalid_config=False)
 
     def _on_config_changed(self, event: ConfigChangedEvent) -> None:
@@ -69,45 +64,31 @@ class KratosIdpIntegratorCharm(CharmBase):
         - If no relation exists, status is waiting
         - Else status is active
         """
-        if self._stored.invalid_config:
+        if self._stored.invalid_config is True:
             pass
         elif not self.external_idp_provider.is_ready():
             self.unit.status = BlockedStatus("Waiting for relation with Kratos")
-        elif not self._stored.redirect_uri and self._stored.enabled:
+        elif not self.external_idp_provider.get_redirect_uri() and self.config["enabled"]:
             self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
+        elif not self.config["enabled"]:
+            self.unit.status = ActiveStatus("Provider is disabled")
         else:
-            msg = "Provider is ready"
-            if not self._stored.enabled:
-                msg = "Provider is disabled"
-
-            self.unit.status = ActiveStatus(msg)
-
-    def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
-        self._stored.redirect_uri = event.redirect_uri
-        self._on_update_status(event)
+            self.unit.status = ActiveStatus("Provider is ready")
 
     def _get_redirect_uri(self, event: ActionEvent) -> None:
         """Get the redirect_uri from the relation and return it to the user."""
-        if redirect_uri := self._stored.redirect_uri:
+        if redirect_uri := self.external_idp_provider.get_redirect_uri():
             event.set_results({"redirect-uri": redirect_uri})
         else:
             # More descriptive message is needed?
             event.fail("No redirect_uri found")
-
-    def _enable(self, event: ActionEvent) -> None:
-        self._stored.enabled = True
-        self._configure_relation()
-
-    def _disable(self, event: ActionEvent) -> None:
-        self._stored.enabled = False
-        self._configure_relation()
 
     def _configure_relation(self) -> None:
         """Create or remove the provider."""
         if not self.external_idp_provider.is_ready():
             return
 
-        if not self._stored.enabled:
+        if not self.config["enabled"]:
             self.external_idp_provider.remove_provider()
         else:
             self.external_idp_provider.create_provider(self.config)

@@ -3,7 +3,3 @@
 
 get-redirect-uri:
   description: Get the Kratos' client redirect_uri
-enable:
-  description: Enable the external provider
-disable:
-  description: Disable the external provider
