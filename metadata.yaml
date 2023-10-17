@@ -7,6 +7,7 @@ description: |
 summary: |
   Charm used to integrate Charmed Kratos with external IdPs
 
+docs: https://discourse.charmhub.io/t/kratos-external-idp-integrator-docs-index/12168
 provides:
   kratos-external-idp:
     interface: external_provider
