@@ -1,4 +1,6 @@
-# operator-template
+# Kratos External IDP Integrator
+
+[![CharmHub Badge](https://charmhub.io/kratos-external-idp-integrator/badge.svg)](https://charmhub.io/kratos-external-idp-integrator)
 
 ## Description
 
