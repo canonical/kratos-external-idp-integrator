@@ -18,6 +18,7 @@ def config() -> Dict:
         "client_id": "client_id",
         "client_secret": "client_secret",
         "provider": "generic",
+        "label": "Some Provider",
         "issuer_url": "http://example.com",
         "secret_backend": "relation",
         "scope": "profile email address phone",
@@ -31,6 +32,7 @@ def generic_databag(config: Dict) -> Dict:
             {
                 "client_id": config["client_id"],
                 "provider": config["provider"],
+                "label": config["label"],
                 "secret_backend": config["secret_backend"],
                 "client_secret": config["client_secret"],
                 "issuer_url": config["issuer_url"],
@@ -60,6 +62,7 @@ def generic_kratos_config(config: Dict) -> Dict:
         "id": "generic_c1b858ba120b6a62d17865256fab2617b727ab27",
         "client_id": config["client_id"],
         "provider": config["provider"],
+        "label": config["label"],
         "client_secret": config["client_secret"],
         "issuer_url": config["issuer_url"],
         "scope": config["scope"].split(" "),

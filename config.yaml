@@ -65,6 +65,10 @@ options:
       The provider's ID to be used in Kratos. The redirect_uri is generated based on this.
       You must not have 2 providers with the same ID registered in Kratos.
     type: string
+  label:
+    description: |
+      The text that will be shown to the user when asked to choose a provider, defaults to the provider type
+    type: string
   scope:
     description: Space separated list of allowed scopes for the provider.
     type: string
