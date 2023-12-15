@@ -81,6 +81,16 @@ def microsoft_config() -> Dict:
 
 
 @pytest.fixture
+def github_config() -> Dict:
+    return {
+        "client_id": "client_id",
+        "client_secret": "client_secret",
+        "provider": "github",
+        "secret_backend": "relation",
+    }
+
+
+@pytest.fixture
 def apple_config() -> Dict:
     return {
         "client_id": "client_id",
