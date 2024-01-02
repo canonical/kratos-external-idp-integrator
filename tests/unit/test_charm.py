@@ -166,6 +166,30 @@ def test_microsoft_invalid_config(harness: Harness, config: Dict, relation_data:
     assert app_data == {}
 
 
+def test_github_config(harness: Harness, github_config: Dict, relation_data: Dict) -> None:
+    expected_databag = {
+        "providers": [
+            {
+                "client_id": github_config["client_id"],
+                "provider": github_config["provider"],
+                "secret_backend": github_config["secret_backend"],
+                "client_secret": github_config["client_secret"],
+                "scope": "user:email",
+            }
+        ]
+    }
+
+    harness.update_config(github_config)
+    relation_id = harness.add_relation("kratos-external-idp", "kratos")
+    harness.add_relation_unit(relation_id, "kratos/0")
+    harness.update_relation_data(relation_id, "kratos", relation_data)
+
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert isinstance(harness.charm.unit.status, ActiveStatus)
+    assert parse_databag(app_data) == expected_databag
+
+
 def test_apple_config(harness: Harness, apple_config: Dict, relation_data: Dict) -> None:
     expected_databag = {
         "providers": [
