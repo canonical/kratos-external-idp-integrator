@@ -43,21 +43,21 @@ Note that depending on the type of the provider different configurations may be 
 
 After deploying, configuring and relating the integrator charm, its status will change to active. Now you can get the redirect_uri by running:
 ```commandline
-juju run-action {unit_name} get-redirect-uri --wait
+juju run {unit_name} get-redirect-uri --wait
 ```
 
 ### Disable the provider
 
 To disable provider, i.e remove it from Kratos, run:
 ```commandline
-juju run-action {unit_name} disable --wait
+juju run {unit_name} disable --wait
 ```
 
 ### Enable the provider
 
 To enable a provider that has been disabled, you need to run:
 ```commandline
-juju run-action {unit_name} enable --wait
+juju run {unit_name} enable --wait
 ```
 
 ## Contributing
