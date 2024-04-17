@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
-from ops.testing import Harness
+from ops.testing import ActionFailed, Harness
 from utils import parse_databag  # type: ignore
 
 
@@ -121,7 +121,6 @@ def test_invalid_provider(harness: Harness, config: Dict) -> None:
     config["provider"] = "error"
     harness.update_config(config)
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
-    # harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
     unit_data = harness.get_relation_data(relation_id, harness.charm.unit)
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
@@ -236,11 +235,12 @@ def test_get_redirect_uri(
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
-    harness.charm._get_redirect_uri(mock_event)
+    action_output = harness.run_action(
+        "get-redirect-uri",
+    )
 
-    mock_event.set_results.assert_called_once()
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert mock_event.set_results.mock_calls[0].args == ({"redirect-uri": redirect_uri},)
+    assert action_output.results == {"redirect-uri": redirect_uri}
 
 
 def test_get_redirect_uri_without_relation(
@@ -248,9 +248,10 @@ def test_get_redirect_uri_without_relation(
 ) -> None:
     harness.update_config(config)
 
-    harness.charm._get_redirect_uri(mock_event)
+    with pytest.raises(ActionFailed) as e:
+        harness.run_action("get-redirect-uri")
 
-    mock_event.fail.assert_called_once_with("No redirect_uri found")
+    assert e.value.message == "No redirect_uri found"
 
 
 def test_get_redirect_uri_without_relation_data(
@@ -259,9 +260,10 @@ def test_get_redirect_uri_without_relation_data(
     harness.update_config(config)
     harness.add_relation("kratos-external-idp", "kratos-app")
 
-    harness.charm._get_redirect_uri(mock_event)
+    with pytest.raises(ActionFailed) as e:
+        harness.run_action("get-redirect-uri")
 
-    mock_event.fail.assert_called_once_with("No redirect_uri found")
+    assert e.value.message == "No redirect_uri found"
 
 
 def test_get_redirect_uri_without_leadership(
@@ -274,9 +276,10 @@ def test_get_redirect_uri_without_leadership(
     relation_id = harness.add_relation("kratos-external-idp", "kratos-app")
     harness.update_relation_data(relation_id, "kratos-app", relation_data)
 
-    harness.charm._get_redirect_uri(mock_event)
+    with pytest.raises(ActionFailed) as e:
+        harness.run_action("get-redirect-uri")
 
-    mock_event.fail.assert_called_once_with("No redirect_uri found")
+    assert e.value.message == "No redirect_uri found"
 
 
 def test_disable(
