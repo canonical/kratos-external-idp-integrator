@@ -54,8 +54,7 @@ juju add-model dev
 # Enable DEBUG logging
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 # Deploy the charm
-juju deploy ./kratos-external-idp-integrator_ubuntu-22.04-amd64.charm \
-    --resource httpbin-image=kennethreitz/httpbin \
+juju deploy ./kratos-external-idp-integrator_ubuntu-22.04-amd64.charm
 ```
 
 ## Canonical Contributor Agreement

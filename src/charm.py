@@ -11,10 +11,18 @@ from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
     ExternalIdpProvider,
     InvalidConfigError,
 )
-from ops.charm import ActionEvent, CharmBase, ConfigChangedEvent, EventBase
-from ops.framework import StoredState
-from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops import (
+    ActionEvent,
+    ActiveStatus,
+    BlockedStatus,
+    CharmBase,
+    ConfigChangedEvent,
+    EventBase,
+    MaintenanceStatus,
+    StoredState,
+    WaitingStatus,
+    main,
+)
 
 logger = logging.getLogger(__name__)
 

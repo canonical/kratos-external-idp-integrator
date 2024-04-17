@@ -5,8 +5,8 @@
 """# Interface library for Kratos external OIDC providers.
 
 This library wraps relation endpoints using the `kratos-external-idp` interface
-and provides a Python API for both requesting Kratos to register the the client credentials for
-communicating with an external provider.
+and provides a Python API for both requesting Kratos to register the client credentials
+and for communicating with an external provider.
 
 ## Getting Started
 
@@ -26,9 +26,6 @@ provides:
         interface: external_provider
         limit: 1
 ```
-
-Next add the `jsonschema` python package to your charm's `requirements.txt`, so that the
-library can validate the incoming relation databags.
 
 Then, to initialise the library:
 
@@ -130,6 +127,8 @@ LIBAPI = 0
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
 LIBPATCH = 7
+
+PYDEPS = ["jsonschema"]
 
 DEFAULT_RELATION_NAME = "kratos-external-idp"
 logger = logging.getLogger(__name__)
@@ -633,9 +632,11 @@ class Provider:
             "client_secret": self.client_secret,
             "issuer_url": self.issuer_url,
             "scope": self.scope.split(" "),
-            "mapper_url": base64.b64encode(self.jsonnet_mapper.encode()).decode()
-            if self.jsonnet_mapper
-            else None,
+            "mapper_url": (
+                base64.b64encode(self.jsonnet_mapper.encode()).decode()
+                if self.jsonnet_mapper
+                else None
+            ),
             "microsoft_tenant": self.tenant_id,
             "apple_team_id": self.team_id,
             "apple_private_key_id": self.private_key_id,
