@@ -29,12 +29,12 @@ Instructions for registering a client on Okta can be found [here](https://develo
 
 For the `kratos-external-idp-integrator` charm to be operative you need to deploy it, configure it and relate to the kratos charm.:
 ```commandline
-juju deploy kratos-external-provider-integrator
-juju config kratos-external-provider-integrator \
+juju deploy kratos-external-idp-integrator
+juju config kratos-external-idp-integrator \
     client_id={client_id} \
     client_secret={client_secret} \
     provider={provider}
-juju relate kratos-external-provider-integrator kratos
+juju relate kratos-external-idp-integrator kratos
 ```
 
 Note that depending on the type of the provider different configurations may be necessary.
@@ -50,14 +50,14 @@ juju run {unit_name} get-redirect-uri --wait
 
 To disable provider, i.e remove it from Kratos, run:
 ```commandline
-juju config kratos-external-provider-integrator enabled=false
+juju config kratos-external-idp-integrator enabled=false
 ```
 
 ### Enable the provider
 
 To enable a provider that has been disabled, you need to run:
 ```commandline
-juju run kratos-external-provider-integrator enabled=true
+juju run kratos-external-idp-integrator enabled=true
 ```
 
 ## Contributing
