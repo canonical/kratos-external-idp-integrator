@@ -126,7 +126,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 7
+LIBPATCH = 8
 
 PYDEPS = ["jsonschema"]
 
@@ -679,10 +679,29 @@ class ClientConfigChangedEvent(EventBase):
         self.relation_id = snapshot["relation_id"]
 
 
+class ClientConfigRemovedEvent(EventBase):
+    """Event to notify the charm that a provider's client config was removed."""
+
+    def __init__(self, handle: Handle, relation_id: str) -> None:
+        super().__init__(handle)
+        self.relation_id = relation_id
+
+    def snapshot(self) -> Dict:
+        """Save event."""
+        return {
+            "relation_id": self.relation_id,
+        }
+
+    def restore(self, snapshot: Dict) -> None:
+        """Restore event."""
+        self.relation_id = snapshot["relation_id"]
+
+
 class ExternalIdpRequirerEvents(ObjectEvents):
     """Event descriptor for events raised by `ExternalIdpRequirerEvents`."""
 
     client_config_changed = EventSource(ClientConfigChangedEvent)
+    client_config_removed = EventSource(ClientConfigRemovedEvent)
 
 
 class ExternalIdpRequirer(Object):
@@ -712,6 +731,7 @@ class ExternalIdpRequirer(Object):
         providers = data["providers"]
 
         if len(providers) == 0:
+            self.on.client_config_removed.emit(event.relation.id)
             return
 
         p = self._get_provider(providers[0], event.relation)
@@ -741,6 +761,18 @@ class ExternalIdpRequirer(Object):
         if not relation:
             return
         relation.data[self.model.app].update(data)
+
+    def remove_relation_registered_provider(self, relation_id: int) -> None:
+        """Delete the provider info from the databag."""
+        if not self._charm.unit.is_leader():
+            return
+
+        relation = self.model.get_relation(
+            relation_name=self._relation_name, relation_id=relation_id
+        )
+        if not relation:
+            return
+        relation.data[self.model.app].clear()
 
     def get_providers(self) -> List:
         """Iterate over the relations and fetch all providers."""
