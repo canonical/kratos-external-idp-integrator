@@ -106,6 +106,32 @@ def test_set_relation_registered_provider(harness: Harness, generic_databag: Dic
     assert parse_databag(app_data) == expected_data
 
 
+def test_set_and_remove_relation_registered_provider(
+    harness: Harness, generic_databag: Dict
+) -> None:
+    redirect_uri = "redirect_uri"
+    provider_id = "provider_id"
+    expected_data = {"providers": [{"redirect_uri": redirect_uri, "provider_id": provider_id}]}
+
+    relation_id = harness.add_relation("kratos-external-idp", "kratos-external-provider")
+    harness.add_relation_unit(relation_id, "kratos-external-provider/0")
+    generic_databag["providers"] = json.dumps(generic_databag["providers"])
+    harness.update_relation_data(relation_id, "kratos-external-provider", generic_databag)
+
+    harness.charm.external_idp_requirer.set_relation_registered_provider(
+        redirect_uri, provider_id, relation_id
+    )
+
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert parse_databag(app_data) == expected_data
+
+    harness.charm.external_idp_requirer.remove_relation_registered_provider(relation_id)
+    app_data = harness.get_relation_data(relation_id, harness.charm.app)
+
+    assert app_data == {}
+
+
 def test_set_relation_registered_provider_when_not_leader(
     harness: Harness, generic_databag: Dict
 ) -> None:
