@@ -50,14 +50,14 @@ juju run {unit_name} get-redirect-uri --wait
 
 To disable provider, i.e remove it from Kratos, run:
 ```commandline
-juju run {unit_name} disable --wait
+juju config kratos-external-provider-integrator enabled=false
 ```
 
 ### Enable the provider
 
 To enable a provider that has been disabled, you need to run:
 ```commandline
-juju run {unit_name} enable --wait
+juju run kratos-external-provider-integrator enabled=true
 ```
 
 ## Contributing
