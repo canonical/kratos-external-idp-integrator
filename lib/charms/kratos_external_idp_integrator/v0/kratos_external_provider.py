@@ -222,7 +222,7 @@ class DataValidationError(RuntimeError):
 def _load_data(data: Dict, schema: Dict) -> Dict:
     """Parses nested fields and checks whether `data` matches `schema`."""
     if "providers" not in data:
-        return dict(providers=[])
+        return {"providers": []}
 
     data = dict(data)
     try:
@@ -619,7 +619,7 @@ class Provider:
         return f"{self.provider}_{id}"
 
     @provider_id.setter
-    def provider_id(self, val) -> None:
+    def provider_id(self, val: str) -> None:
         self.id = val
 
     def config(self) -> Dict:
@@ -744,14 +744,9 @@ class ExternalIdpRequirer(Object):
         if not self._charm.unit.is_leader():
             return
 
-        data = dict(
-            providers=[
-                dict(
-                    redirect_uri=redirect_uri,
-                    provider_id=provider_id,
-                )
-            ]
-        )
+        data = {
+            "providers": [{"redirect_uri": redirect_uri, "provider_id": provider_id}],
+        }
 
         data = _dump_data(data, REQUIRER_JSON_SCHEMA)
 

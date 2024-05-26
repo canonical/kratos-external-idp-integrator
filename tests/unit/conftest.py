@@ -45,14 +45,12 @@ def generic_databag(config: Dict) -> Dict:
 @pytest.fixture
 def relation_data() -> Dict:
     return {
-        "providers": json.dumps(
-            [
-                {
-                    "redirect_uri": "https://example.com/callback",
-                    "provider_id": "provider",
-                }
-            ]
-        )
+        "providers": json.dumps([
+            {
+                "redirect_uri": "https://example.com/callback",
+                "provider_id": "provider",
+            }
+        ])
     }
 
 
