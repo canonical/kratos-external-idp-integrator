@@ -1,5 +1,0 @@
-# Copyright 2022 Canonical Ltd.
-# See LICENSE file for licensing details.
-
-get-redirect-uri:
-  description: Get the Kratos' client redirect_uri
