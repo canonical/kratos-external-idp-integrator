@@ -98,13 +98,9 @@ actions:
   get-redirect-uri:
     description: Get the Kratos' client redirect_uri
 
-bases:
-  - build-on:
-      - name: "ubuntu"
-        channel: "22.04"
-    run-on:
-      - name: "ubuntu"
-        channel: "22.04"
+base: ubuntu@22.04
+platforms:
+  amd64:
 
 parts:
   charm:
