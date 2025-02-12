@@ -645,7 +645,7 @@ class Provider:
             "issuer_url": self.issuer_url,
             "scope": self.get_scope(),
             "mapper_url": (
-                base64.b64encode(self.jsonnet_mapper.encode()).decode()
+                f"base64://{base64.b64encode(self.jsonnet_mapper.encode()).decode()}"
                 if self.jsonnet_mapper
                 else None
             ),
