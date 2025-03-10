@@ -1,17 +1,13 @@
 # reusable workflow for publishing all charms in this repo
-name: Publish
+name: Publish and Deploy
+run-name: Publish to ${{ inputs.destination_channel}} and deploy
+
 
 on:
-  workflow_call:
-    inputs:
-      source_branch:
-        description: Github branch from this repo to publish.  If blank, will use the default branch
-        default: ''
-        required: false
-        type: string
-    secrets:
-      CHARMCRAFT_CREDENTIALS:
-        required: true
+  push:
+    tags:
+      - "v**"
+      - "track**"  
 
   workflow_dispatch:
     inputs:
@@ -25,23 +21,52 @@ on:
         required: false
         default: ''
         type: string
+      override-ci:
+        description: Override standard release flow
+        required: true  
+        type: boolean
 
 jobs:
-  publish-charm:
-    name: Publish Charm
-    runs-on: ubuntu-24.04
-
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      track: ${{ steps.check_step.outputs.track }}
+      channel: ${{ steps.export.outputs.channel }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.source_branch }}
+      - name: Get current branch
+        id: check_step
+        run: |
+          raw=$(git branch -r --contains ${{ github.ref }})
+          echo $raw
+          track=${raw##*/}
+          echo "track=$track" >> $GITHUB_OUTPUT
+          echo "Track is $track."  
+      - name: Get channel 
+        if: ${{ steps.check_step.outputs.track == 'main'}}
+        run: echo "channel=latest/edge" >> $GITHUB_ENV
+      - name: Get channel 
+        if: ${{ steps.check_step.outputs.track != 'main'}}
+        run: echo "channel=${{ steps.check_step.outputs.track }}/edge" >> $GITHUB_ENV
+      - name: Export channel
+        id: export
+        run: echo channel=${{ env.channel }} >> $GITHUB_OUTPUT
 
-      - name: Select charmhub channel
-        uses: canonical/charming-actions/channel@1753e0803f70445132e92acd45c905aba6473225 # 2.7.0
-        id: select-channel
-        if: ${{ inputs.destination_channel == '' }}
+  
+  publish-charm:
+    name: Publish Charm
+    runs-on: ubuntu-24.04
+    needs: check
+    outputs:
+      channel: ${{ steps.parse-inputs.outputs.destination_channel }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
 
       # Combine inputs from different sources to a single canonical value so later steps don't
       # need logic for picking the right one
@@ -49,9 +74,9 @@ jobs:
         id: parse-inputs
         run: |
           # destination_channel
-          destination_channel="${{ inputs.destination_channel || steps.select-channel.outputs.name }}"
+          destination_channel="${{ inputs.destination_channel || needs.check.outputs.channel }}"
           echo "setting output of destination_channel=$destination_channel"
-          echo "::set-output name=destination_channel::$destination_channel"
+          echo "destination_channel=$destination_channel" >> $GITHUB_OUTPUT
 
       - name: Setup lxd
         uses: canonical/setup-lxd@v0.1.2
