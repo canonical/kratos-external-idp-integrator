@@ -1,0 +1,24 @@
+# Changelog
+
+## 1.0.0 (2025-03-10)
+
+
+### Features
+
+* added automerge and auto-approve to charm lib updates ([06cb1b6](https://github.com/canonical/kratos-external-idp-integrator/commit/06cb1b61a7db788785ba7e301f467dbeb3aa3d23))
+* added base-channel parameter to release-charm action ([78bd9ff](https://github.com/canonical/kratos-external-idp-integrator/commit/78bd9ff1ff7af1bc7600ced7973a8ad55680cba3))
+
+
+### Bug Fixes
+
+* add base64 prefix to mapper_url ([acaf617](https://github.com/canonical/kratos-external-idp-integrator/commit/acaf617c0fd139f31f153f58e5efeb078a7cf698))
+* Add label config ([a22c1fd](https://github.com/canonical/kratos-external-idp-integrator/commit/a22c1fd83015eedd5a826ef688c242bed0eaa87d))
+* add ory logo ([584f01c](https://github.com/canonical/kratos-external-idp-integrator/commit/584f01cfd8b670eba063f41b74328642b322ef47))
+* add provider removed lib logic ([ffe61aa](https://github.com/canonical/kratos-external-idp-integrator/commit/ffe61aa026034519fdd7bd33445c8de2e5756a8c))
+* bumped microk8s version to 1.28-strict/stable in CI ([ff93efc](https://github.com/canonical/kratos-external-idp-integrator/commit/ff93efc58ef31b0472efd72dc6d912c7bd060952))
+* fix bug introduced by latest ops ([29da9c7](https://github.com/canonical/kratos-external-idp-integrator/commit/29da9c75ac535c2faffe4e5b3d0ebc0f9f716ca3))
+* fixed pytest-asyncio to version 0.21.1 ([fa437cc](https://github.com/canonical/kratos-external-idp-integrator/commit/fa437cc24f3fd9d35e98a4769dd7d758e85f05fd))
+* remove renovate workflow ([a5d1a90](https://github.com/canonical/kratos-external-idp-integrator/commit/a5d1a908644983fff754152c3e10064f82b6d3df))
+* set default scopes for github ([423ad1e](https://github.com/canonical/kratos-external-idp-integrator/commit/423ad1eb888b7207fa379385e5cd18436d92d9eb))
+* update lib ([bc9c66a](https://github.com/canonical/kratos-external-idp-integrator/commit/bc9c66af3dd8130ecd29c028e9e03ce8a0628435))
+* update unit tests ([0e75c18](https://github.com/canonical/kratos-external-idp-integrator/commit/0e75c18c515f2519c2780e3d4a250737053ca3e7))
