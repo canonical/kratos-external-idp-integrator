@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.0.0...v1.0.1) (2025-03-21)
+
+
+### Bug Fixes
+
+* fix the lint ci ([fdf6c0c](https://github.com/canonical/kratos-external-idp-integrator/commit/fdf6c0c55bc7b1c5a13b07f35ace74b267e71643))
+* fix the lint ci ([7170436](https://github.com/canonical/kratos-external-idp-integrator/commit/71704369969ba646608c7fb70efc691fa2ecba4d))
+
 ## 1.0.0 (2025-03-10)
 
 
