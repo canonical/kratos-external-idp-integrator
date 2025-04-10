@@ -4,10 +4,12 @@
 
 
 import logging
+import os
 from pathlib import Path
 from typing import Dict
 
 import pytest
+import pytest_asyncio
 import yaml
 from pytest_operator.plugin import OpsTest
 
@@ -27,15 +29,23 @@ def config() -> Dict:
     }
 
 
+@pytest_asyncio.fixture
+async def local_charm(ops_test: OpsTest) -> Path:
+    # in GitHub CI, charms are built with charmcraftcache and uploaded to $CHARM_PATH
+    charm = os.getenv("CHARM_PATH")
+    if not charm:
+        # fall back to build locally - required when run outside of GitHub CI
+        charm = await ops_test.build_charm(".")
+    return charm
+
+
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test: OpsTest, config: Dict) -> None:
+async def test_build_and_deploy(ops_test: OpsTest, config: Dict, local_charm: Path) -> None:
     """Build the charm-under-test and deploy it together with related charms.
 
     Assert on the unit status before any relations/configurations take place.
     """
-    # build and deploy charm from local source folder
-    charm = await ops_test.build_charm(".")
-    await ops_test.model.deploy(charm, application_name=APP_NAME, config=config, series="jammy")
+    await ops_test.model.deploy(entity_url=str(local_charm), application_name=APP_NAME, config=config, series="jammy")
 
     # issuing dummy update_status just to trigger an event
     async with ops_test.fast_forward():
