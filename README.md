@@ -77,6 +77,11 @@ To enable a provider that has been disabled, you need to run:
 juju run kratos-external-idp-integrator enabled=true
 ```
 
+## Security
+
+Please see [SECURITY.md](https://github.com/canonical/kratos-external-idp-integrator/blob/main/SECURITY.md)
+for guidelines on reporting security issues.
+
 ## Contributing
 
 Please see the [Juju SDK docs](https://juju.is/docs/sdk) for guidelines on
