@@ -45,7 +45,9 @@ async def test_build_and_deploy(ops_test: OpsTest, config: Dict, local_charm: Pa
 
     Assert on the unit status before any relations/configurations take place.
     """
-    await ops_test.model.deploy(entity_url=str(local_charm), application_name=APP_NAME, config=config, series="jammy")
+    await ops_test.model.deploy(
+        entity_url=str(local_charm), application_name=APP_NAME, config=config, series="jammy"
+    )
 
     # issuing dummy update_status just to trigger an event
     async with ops_test.fast_forward():
