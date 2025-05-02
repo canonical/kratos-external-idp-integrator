@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.0.0...v1.1.0) (2025-05-02)
+
+
+### Features
+
+* add terraform module ([623c64d](https://github.com/canonical/kratos-external-idp-integrator/commit/623c64d9f4b07e3237429ad887420791874339d9))
+* add terraform module ([ee7c230](https://github.com/canonical/kratos-external-idp-integrator/commit/ee7c2305072c597488cbdef2680661feeb40f18d))
+
+
+### Bug Fixes
+
+* fix the lint ci ([fdf6c0c](https://github.com/canonical/kratos-external-idp-integrator/commit/fdf6c0c55bc7b1c5a13b07f35ace74b267e71643))
+* fix the lint ci ([7170436](https://github.com/canonical/kratos-external-idp-integrator/commit/71704369969ba646608c7fb70efc691fa2ecba4d))
+
 ## 1.0.0 (2025-03-10)
 
 
