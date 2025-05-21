@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.0...v1.1.1) (2025-05-21)
+
+
+### Bug Fixes
+
+* address setuptools CVEs ([906432f](https://github.com/canonical/kratos-external-idp-integrator/commit/906432f1f1d483227c733124ce519d958904cf4f)), closes [#220](https://github.com/canonical/kratos-external-idp-integrator/issues/220)
+
 ## [1.1.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.0.0...v1.1.0) (2025-05-02)
 
 
