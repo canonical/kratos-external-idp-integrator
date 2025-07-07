@@ -13,7 +13,18 @@ variable "app_name" {
 
 variable "config" {
   description = "The charm config"
-  type        = map(string)
+  type        = optional(object({
+      client_id : string
+      client_secret : string
+      issuer_url : optional(string)
+      provider : string
+      provider_id : string
+      scope : optional(string, "profile email address phone")
+      microsoft_tenant_id : optional(string)
+      apple_team_id : optional(string)
+      apple_private_key_id : optional(string)
+      apple_private_key : optional(string)
+      })
   default     = {}
 }
 
