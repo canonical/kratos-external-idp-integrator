@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.1...v1.1.2) (2025-07-21)
+
+
+### Bug Fixes
+
+* fix the library to handle relation broken event ([e12230a](https://github.com/canonical/kratos-external-idp-integrator/commit/e12230a1929d865343287d2577a8a63f83a37fff))
+* fix the library to handle relation broken event ([4e6068b](https://github.com/canonical/kratos-external-idp-integrator/commit/4e6068b68e3c81830a81a3701918e15eedb5688d))
+
 ## [1.1.1](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.0...v1.1.1) (2025-05-21)
 
 
