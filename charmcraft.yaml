@@ -105,4 +105,3 @@ parts:
   charm:
     charm-binary-python-packages:
       - "setuptools>=70.0.0"
-      - jsonschema
