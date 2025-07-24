@@ -1,105 +1,101 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""A Juju charm for integrating Ory Kratos with and external IdP."""
+"""A Juju charm for integrating an identity broker with an external IdP."""
 
 import logging
 from typing import Any
 
-from charms.kratos_external_idp_integrator.v0.kratos_external_provider import (
+from charms.kratos_external_idp_integrator.v1.kratos_external_provider import (
     ExternalIdpProvider,
-    InvalidConfigError,
+    RedirectURIChangedEvent,
 )
 from ops import (
     ActionEvent,
     ActiveStatus,
     BlockedStatus,
     CharmBase,
+    CollectStatusEvent,
     ConfigChangedEvent,
-    EventBase,
     MaintenanceStatus,
-    StoredState,
     WaitingStatus,
     main,
 )
 
 logger = logging.getLogger(__name__)
 
+KRATOS_EXTERNAL_IDP_INTEGRATION_NAME = "kratos-external-idp"
+
 
 class KratosIdpIntegratorCharm(CharmBase):
-    """Charm the service."""
-
-    _stored = StoredState()
-    _relation_name = "kratos-external-idp"
-
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
         self.external_idp_provider = ExternalIdpProvider(self)
 
-        # Charm events
+        # Lifecycle events
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.update_status, self._on_update_status)
+        self.framework.observe(self.on.collect_unit_status, self._on_collect_status)
 
-        # Library events
-        self.framework.observe(self.external_idp_provider.on.ready, self._on_config_changed)
+        # External IdP provider
         self.framework.observe(
-            self.external_idp_provider.on.redirect_uri_changed, self._on_update_status
+            self.external_idp_provider.on.ready,
+            self._on_config_changed,
+        )
+        self.framework.observe(
+            self.external_idp_provider.on.redirect_uri_changed,
+            self._on_redirect_uri_changed,
         )
 
         # Action events
-        self.framework.observe(self.on.get_redirect_uri_action, self._get_redirect_uri)
-
-        self._stored.set_default(invalid_config=False)
+        self.framework.observe(
+            self.on.get_redirect_uri_action,
+            self._on_get_redirect_uri,
+        )
 
     def _on_config_changed(self, event: ConfigChangedEvent) -> None:
-        try:
-            self._stored.invalid_config = False
-            self.external_idp_provider.validate_provider_config(self.config)
-        except InvalidConfigError as e:
-            self.unit.status = BlockedStatus(f"Invalid configuration: {e.args[0]}")
-            self._stored.invalid_config = True
+        if not (providers := self.external_idp_provider.validate_provider_config([self.config])):
             return
 
         self.unit.status = MaintenanceStatus("Configuring the charm")
-        self._configure_relation()
-        self._on_update_status(event)
 
-    def _on_update_status(self, event: EventBase) -> None:
-        """Set the unit status.
-
-        - If unit is blocked, leave it that way (it means that mandatory config is missing)
-        - If no relation exists, status is waiting
-        - Else status is active
-        """
-        if self._stored.invalid_config is True:
-            pass
-        elif not self.external_idp_provider.is_ready():
-            self.unit.status = BlockedStatus("Waiting for relation with Kratos")
-        elif not self.external_idp_provider.get_redirect_uri() and self.config["enabled"]:
-            self.unit.status = WaitingStatus("Waiting for Kratos to register provider")
-        elif not self.config["enabled"]:
-            self.unit.status = ActiveStatus("Provider is disabled")
-        else:
-            self.unit.status = ActiveStatus("Provider is ready")
-
-    def _get_redirect_uri(self, event: ActionEvent) -> None:
-        """Get the redirect_uri from the relation and return it to the user."""
-        if redirect_uri := self.external_idp_provider.get_redirect_uri():
-            event.set_results({"redirect-uri": redirect_uri})
-        else:
-            # More descriptive message is needed?
-            event.fail("No redirect_uri found")
-
-    def _configure_relation(self) -> None:
-        """Create or remove the provider."""
         if not self.external_idp_provider.is_ready():
             return
 
         if not self.config["enabled"]:
             self.external_idp_provider.remove_provider()
-        else:
-            self.external_idp_provider.create_provider(self.config)
+            return
+
+        self.external_idp_provider.create_providers(providers)
+
+    def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
+        logger.info(f"The client's redirect_uri changed to {event.redirect_uri}")
+
+    def _on_collect_status(self, event: CollectStatusEvent) -> None:
+        if not self.external_idp_provider.validate_provider_config([self.config]):
+            event.add_status(BlockedStatus("Invalid OIDC provider configuration"))
+
+        if not self.external_idp_provider.is_ready():
+            event.add_status(
+                BlockedStatus(f"Missing integration {KRATOS_EXTERNAL_IDP_INTEGRATION_NAME}")
+            )
+
+        if not self.external_idp_provider.get_redirect_uri() and self.config["enabled"]:
+            event.add_status(
+                WaitingStatus("Waiting for the requirer charm to register the OIDC provider")
+            )
+
+        if not self.config["enabled"]:
+            event.add_status(ActiveStatus("The OIDC provider is disabled"))
+
+        event.add_status(ActiveStatus("The OIDC provider is ready"))
+
+    def _on_get_redirect_uri(self, event: ActionEvent) -> None:
+        if not (redirect_uri := self.external_idp_provider.get_redirect_uri()):
+            event.fail("No redirect uri is found")
+            return
+
+        event.set_results({"redirect-uri": redirect_uri})
 
 
 if __name__ == "__main__":
