@@ -43,6 +43,25 @@ def generic_databag(config: Dict) -> Dict:
 
 
 @pytest.fixture
+def generic_databag_v1(config: dict) -> dict:
+    return {
+        "providers": [
+            {
+                "client_id": config["client_id"],
+                "provider": config["provider"],
+                "label": config["label"],
+                "client_secret": config["client_secret"],
+                "issuer_url": config["issuer_url"],
+                "scope": config["scope"],
+                "id": "generic_c1b858ba120b6a62d17865256fab2617b727ab27",
+                "jsonnet_mapper": None,
+                "mapper_url": None,
+            }
+        ]
+    }
+
+
+@pytest.fixture
 def relation_data() -> Dict:
     return {
         "providers": json.dumps([

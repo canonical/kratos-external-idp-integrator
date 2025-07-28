@@ -1,6 +1,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import base64
 import json
 from typing import Dict
 from unittest.mock import MagicMock
@@ -12,7 +13,7 @@ from utils import parse_databag  # type: ignore
 
 
 def test_relation(
-    harness: Harness, config: Dict, relation_data: Dict, generic_databag: Dict
+    harness: Harness, config: Dict, relation_data: Dict, generic_databag_v1: Dict
 ) -> None:
     harness.update_config(config)
     relation_id = harness.add_relation("kratos-external-idp", "kratos")
@@ -24,7 +25,7 @@ def test_relation(
 
     assert isinstance(harness.charm.unit.status, WaitingStatus)
     assert unit_data == {}
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
 
     harness.update_relation_data(relation_id, "kratos", relation_data)
 
@@ -32,14 +33,19 @@ def test_relation(
     harness.evaluate_status()
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
 
 
 def test_jsonnet_config(
-    harness: Harness, config: Dict, relation_data: Dict, generic_databag: Dict, jsonnet: str
+    harness: Harness, config: Dict, relation_data: Dict, generic_databag_v1: Dict, jsonnet: str
 ) -> None:
+    generic_databag_v1["providers"][0].update({
+        "id": "generic_c1b858ba120b6a62d17865256fab2617b727ab27",
+        "jsonnet_mapper": jsonnet,
+        "mapper_url": f"base64://{base64.b64encode(jsonnet.encode()).decode()}",
+    })
+
     harness.update_config(dict(jsonnet_mapper=jsonnet, **config))
-    generic_databag["providers"][0]["jsonnet_mapper"] = jsonnet
     relation_id = harness.add_relation("kratos-external-idp", "kratos")
     harness.add_relation_unit(relation_id, "kratos/0")
 
@@ -47,14 +53,14 @@ def test_jsonnet_config(
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert unit_data == {}
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
 
 
 def test_extra_config(
     harness: Harness,
     config: Dict,
     relation_data: Dict,
-    generic_databag: Dict,
+    generic_databag_v1: Dict,
 ) -> None:
     config["microsoft_tenant_id"] = "4242424242"
 
@@ -67,7 +73,7 @@ def test_extra_config(
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
 
 
 def test_config_no_relation(harness: Harness, config: Dict) -> None:
@@ -80,7 +86,7 @@ def test_invalid_config(
     harness: Harness,
     invalid_provider_config: Dict,
     config: Dict,
-    generic_databag: Dict,
+    generic_databag_v1: Dict,
     relation_data: Dict,
 ) -> None:
     harness.update_config(invalid_provider_config)
@@ -100,7 +106,7 @@ def test_invalid_config(
     app_data = harness.get_relation_data(relation_id, harness.charm.app)
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
 
 
 def test_invalid_provider(harness: Harness, config: Dict) -> None:
@@ -122,10 +128,13 @@ def test_microsoft_config(harness: Harness, microsoft_config: Dict, relation_dat
             {
                 "client_id": microsoft_config["client_id"],
                 "provider": microsoft_config["provider"],
-                "secret_backend": microsoft_config["secret_backend"],
                 "microsoft_tenant": microsoft_config["microsoft_tenant_id"],
                 "client_secret": microsoft_config["client_secret"],
                 "scope": "profile email address phone",
+                "id": "microsoft_6e1ce1792c6e3594dfc2f2e9f53d386fcfab4d36",
+                "label": "microsoft",
+                "jsonnet_mapper": None,
+                "mapper_url": None,
             }
         ]
     }
@@ -160,9 +169,12 @@ def test_github_config(harness: Harness, github_config: Dict, relation_data: Dic
             {
                 "client_id": github_config["client_id"],
                 "provider": github_config["provider"],
-                "secret_backend": github_config["secret_backend"],
                 "client_secret": github_config["client_secret"],
                 "scope": "user:email",
+                "id": "github_96da49381769303a6515a8785c7f19c383db376a",
+                "label": "github",
+                "jsonnet_mapper": None,
+                "mapper_url": None,
             }
         ]
     }
@@ -185,11 +197,14 @@ def test_apple_config(harness: Harness, apple_config: Dict, relation_data: Dict)
             {
                 "client_id": "client_id",
                 "provider": "apple",
-                "secret_backend": "relation",
                 "apple_team_id": "apple_team_id",
                 "apple_private_key_id": "apple_private_key_id",
                 "apple_private_key": "apple_private_key",
                 "scope": "profile email address phone",
+                "id": "apple_96da49381769303a6515a8785c7f19c383db376a",
+                "label": "apple",
+                "jsonnet_mapper": None,
+                "mapper_url": None,
             }
         ]
     }
@@ -278,7 +293,7 @@ def test_get_redirect_uri_without_leadership(
 def test_disable(
     harness: Harness,
     config: Dict,
-    generic_databag: Dict,
+    generic_databag_v1: Dict,
     relation_data: Dict,
 ) -> None:
     harness.update_config(config)
@@ -295,4 +310,4 @@ def test_disable(
     harness.evaluate_status()
 
     assert isinstance(harness.charm.unit.status, ActiveStatus)
-    assert parse_databag(app_data) == generic_databag
+    assert parse_databag(app_data) == generic_databag_v1
