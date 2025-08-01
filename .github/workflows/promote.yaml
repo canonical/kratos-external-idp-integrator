@@ -65,15 +65,16 @@ jobs:
       - promote-charm
       - revision
     if: ${{ (github.event.inputs.destination-channel == 'latest/edge') }}
-    uses: ./.github/workflows/_deploy.yaml
-    secrets:
-      CLIENT_ID: ${{ secrets.JIMM_DEV_CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.JIMM_DEV_CLIENT_SECRET }}
-      JIMM_URL: ${{ secrets.JIMM_URL }}
+    uses: canonical/identity-team/.github/workflows/charm-deploy.yaml@f18247249f506f3c9210b86e43a2c4dd063088c5 # v1.8.7
     with:
       model: dev-iam
       revision: ${{ needs.revision.outputs.revision }}
       channel: ${{ github.event.inputs.destination-channel }}
+      application: kratos-external-idp-integrator
+    secrets:
+      CLIENT_ID: ${{ secrets.JIMM_DEV_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.JIMM_DEV_CLIENT_SECRET }}
+      JIMM_URL: ${{ secrets.JIMM_URL }}
 
   stg-deploy:
     concurrency:
@@ -83,12 +84,13 @@ jobs:
       - promote-charm
       - revision
     if: ${{ (github.event.inputs.destination-channel == 'latest/stable') }}
-    uses: ./.github/workflows/_deploy.yaml
-    secrets:
-      CLIENT_ID: ${{ secrets.JIMM_STG_CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.JIMM_STG_CLIENT_SECRET }}
-      JIMM_URL: ${{ secrets.JIMM_URL }}
+    uses: canonical/identity-team/.github/workflows/charm-deploy.yaml@f18247249f506f3c9210b86e43a2c4dd063088c5 # v1.8.7
     with:
       model: stg-iam
       revision: ${{ needs.revision.outputs.revision }}
       channel: ${{ github.event.inputs.destination-channel }}
+      application: kratos-external-idp-integrator
+    secrets:
+      CLIENT_ID: ${{ secrets.JIMM_STG_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.JIMM_STG_CLIENT_SECRET }}
+      JIMM_URL: ${{ secrets.JIMM_URL }}
