@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.2...v2.0.0) (2025-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* migrate to use pydantic instead of jsonschema and refactor charm
+
+### Bug Fixes
+
+* fix unit test ([83a3a6c](https://github.com/canonical/kratos-external-idp-integrator/commit/83a3a6cc9f20790f39af5e0b4ba870fa1517d5ba))
+
+
+### Code Refactoring
+
+* migrate to use pydantic instead of jsonschema and refactor charm ([3d4c829](https://github.com/canonical/kratos-external-idp-integrator/commit/3d4c829c9e67b0d86fddb1d667a76a6559869d11))
+
 ## [1.1.2](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.1...v1.1.2) (2025-07-21)
 
 
