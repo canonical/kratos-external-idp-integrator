@@ -18,5 +18,5 @@ resource "juju_application" "kratos-external-idp" {
     channel  = var.channel
     revision = var.revision
   }
-  model_uuid = var.model_name
+  model_uuid = var.model
 }
