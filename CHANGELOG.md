@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.0.0...v2.1.0) (2025-11-14)
+
+
+### Features
+
+* upgrade to juju 1.0.0 ([80ce05e](https://github.com/canonical/kratos-external-idp-integrator/commit/80ce05eb2f5df96a47d489ac90964d3bb317e272))
+* upgrade to juju 1.0.0 ([2bb4b16](https://github.com/canonical/kratos-external-idp-integrator/commit/2bb4b16abc4aa677a2fc57f90076cd1f546ba184))
+
 ## [2.0.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v1.1.2...v2.0.0) (2025-09-19)
 
 
