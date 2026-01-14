@@ -4,55 +4,34 @@
 
 
 import logging
-import os
 from pathlib import Path
 from typing import Dict
 
+import jubilant
 import pytest
-import pytest_asyncio
-import yaml
-from pytest_operator.plugin import OpsTest
+from integration.constants import APP_NAME
+from integration.utils import any_error, is_blocked
 
 logger = logging.getLogger(__name__)
 
-METADATA = yaml.safe_load(Path("./charmcraft.yaml").read_text())
-APP_NAME = METADATA["name"]
 
-
-@pytest.fixture
-def config() -> Dict:
-    return {
-        "client_id": "client_id",
-        "client_secret": "client_secret",
-        "provider": "generic",
-        "issuer_url": "http://example.com",
-    }
-
-
-@pytest_asyncio.fixture
-async def local_charm(ops_test: OpsTest) -> Path:
-    # in GitHub CI, charms are built with charmcraftcache and uploaded to $CHARM_PATH
-    charm = os.getenv("CHARM_PATH")
-    if not charm:
-        # fall back to build locally - required when run outside of GitHub CI
-        charm = await ops_test.build_charm(".")
-    return charm
-
-
-@pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test: OpsTest, config: Dict, local_charm: Path) -> None:
+@pytest.mark.setup
+def test_build_and_deploy(juju: jubilant.Juju, config: Dict, local_charm: Path) -> None:
     """Build the charm-under-test and deploy it together with related charms.
 
     Assert on the unit status before any relations/configurations take place.
     """
-    await ops_test.model.deploy(
-        entity_url=str(local_charm), application_name=APP_NAME, config=config, series="jammy"
+    juju.deploy(str(local_charm), app=APP_NAME, config=config)
+
+    juju.wait(
+        ready=is_blocked(APP_NAME),
+        error=any_error(APP_NAME),
+        timeout=10 * 60,
     )
 
-    # issuing dummy update_status just to trigger an event
-    async with ops_test.fast_forward():
-        await ops_test.model.wait_for_idle(
-            apps=[APP_NAME],
-            timeout=1000,
-        )
-        assert ops_test.model.applications[APP_NAME].units[0].workload_status == "blocked"
+
+@pytest.mark.teardown
+def test_remove_application(juju: jubilant.Juju) -> None:
+    """Test removing the application."""
+    juju.remove_application(APP_NAME, destroy_storage=True)
+    juju.wait(lambda s: APP_NAME not in s.apps, timeout=10 * 60)

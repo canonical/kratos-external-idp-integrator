@@ -1,7 +1,5 @@
-# TODO: remove when new version is released
-# Relevant PR https://github.com/go-macaroon-bakery/py-macaroon-bakery/pull/95
-macaroonbakery==1.3.4
+
 pytest
-juju
-pytest-operator>=0.28.0
+jubilant
+tenacity
 -r requirements.txt
