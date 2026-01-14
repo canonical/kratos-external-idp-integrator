@@ -2,10 +2,11 @@
 # See LICENSE file for licensing details.
 
 import json
-from typing import Dict
+from typing import Any, Mapping
 
 
-def parse_databag(data: Dict) -> Dict:
-    data = dict(data)
-    data["providers"] = json.loads(data["providers"])
-    return data
+def parse_databag(data: Mapping[str, Any]) -> dict[str, Any]:
+    output = dict(data)
+    if "providers" in output:
+        output["providers"] = json.loads(output["providers"])
+    return output
