@@ -1,19 +1,32 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import dataclasses
 import json
 from textwrap import dedent
-from typing import Dict, Generator
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from ops.testing import Harness
+from ops.testing import Context, Relation, State
 
-from charm import KratosIdpIntegratorCharm
+from charm import KRATOS_EXTERNAL_IDP_INTEGRATION_NAME, KratosIdpIntegratorCharm
 
 
 @pytest.fixture
-def config() -> Dict:
+def kratos_relation() -> Relation:
+    return Relation(KRATOS_EXTERNAL_IDP_INTEGRATION_NAME, remote_app_name="kratos")
+
+
+@pytest.fixture
+def kratos_relation_with_data(
+    kratos_relation: Relation, relation_data: dict[str, Any]
+) -> Relation:
+    return dataclasses.replace(kratos_relation, remote_app_data=relation_data)
+
+
+@pytest.fixture
+def config() -> dict[str, Any]:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -26,7 +39,7 @@ def config() -> Dict:
 
 
 @pytest.fixture
-def generic_databag(config: Dict) -> Dict:
+def generic_databag(config: dict[str, Any]) -> dict[str, Any]:
     return {
         "providers": [
             {
@@ -43,7 +56,7 @@ def generic_databag(config: Dict) -> Dict:
 
 
 @pytest.fixture
-def generic_databag_v1(config: dict) -> dict:
+def generic_databag_v1(config: dict[str, Any]) -> dict[str, Any]:
     return {
         "providers": [
             {
@@ -62,7 +75,7 @@ def generic_databag_v1(config: dict) -> dict:
 
 
 @pytest.fixture
-def relation_data() -> Dict:
+def relation_data() -> dict[str, Any]:
     return {
         "providers": json.dumps([
             {
@@ -74,7 +87,7 @@ def relation_data() -> Dict:
 
 
 @pytest.fixture
-def generic_kratos_config(config: Dict) -> Dict:
+def generic_kratos_config(config: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": "generic_c1b858ba120b6a62d17865256fab2617b727ab27",
         "client_id": config["client_id"],
@@ -87,7 +100,7 @@ def generic_kratos_config(config: Dict) -> Dict:
 
 
 @pytest.fixture
-def microsoft_config() -> Dict:
+def microsoft_config() -> dict[str, Any]:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -98,7 +111,7 @@ def microsoft_config() -> Dict:
 
 
 @pytest.fixture
-def github_config() -> Dict:
+def github_config() -> dict[str, Any]:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -108,7 +121,7 @@ def github_config() -> Dict:
 
 
 @pytest.fixture
-def apple_config() -> Dict:
+def apple_config() -> dict[str, Any]:
     return {
         "client_id": "client_id",
         "provider": "apple",
@@ -120,7 +133,7 @@ def apple_config() -> Dict:
 
 
 @pytest.fixture
-def invalid_provider_config() -> Dict:
+def invalid_provider_config() -> dict[str, Any]:
     return {
         "client_id": "client_id",
         "client_secret": "client_secret",
@@ -137,12 +150,8 @@ def mock_event() -> MagicMock:
 
 
 @pytest.fixture
-def harness() -> Generator[Harness, None, None]:
-    harness = Harness(KratosIdpIntegratorCharm)
-    harness.set_leader(True)
-    harness.begin_with_initial_hooks()
-    yield harness
-    harness.cleanup()
+def context() -> Context:
+    return Context(KratosIdpIntegratorCharm)
 
 
 @pytest.fixture
@@ -164,3 +173,9 @@ def jsonnet() -> str:
             },
         }"""
     )
+
+
+def create_state(
+    config: dict[str, Any], relations: list[Relation] | None = None, leader: bool = True
+) -> State:
+    return State(config=config, relations=relations or [], leader=leader)

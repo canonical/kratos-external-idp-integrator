@@ -72,7 +72,6 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
     try:
         yield juju_
     finally:
-        breakpoint()
         if request.session.testsfailed:
             log = juju_.debug_log(limit=1000)
             print(log, end="")
