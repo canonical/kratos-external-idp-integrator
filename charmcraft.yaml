@@ -8,7 +8,7 @@ description: |
 summary: |
   Charm used to integrate Charmed Kratos with external IdPs
 links:
-  documentation: https://discourse.charmhub.io/t/kratos-external-idp-integrator-docs-index/12168
+  documentation: https://canonical-identity.readthedocs-hosted.com/reference/charms/kratos-external-idp-integrator
   source: https://github.com/canonical/kratos-external-idp-integrator
   issues: https://github.com/canonical/kratos-external-idp-integrator/issues
 
