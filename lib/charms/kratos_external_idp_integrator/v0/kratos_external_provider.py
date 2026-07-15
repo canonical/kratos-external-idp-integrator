@@ -608,7 +608,7 @@ class Provider:
 
     @property
     def provider_id(self) -> str:
-        """Returns a unique ID for the client credentials of the provider."""
+        """A unique ID for the client credentials of the provider."""
         if self.id:
             return self.id
 
