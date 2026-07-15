@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.1.0...v2.2.0) (2026-07-15)
+
+
+### Features
+
+* support arm64 ([adcd626](https://github.com/canonical/kratos-external-idp-integrator/commit/adcd626f0e94873f578c9e17e3d6af9b40077b7c))
+* support arm64 ([92bdf0b](https://github.com/canonical/kratos-external-idp-integrator/commit/92bdf0b5819415e013364781de07ab8b14ea209e))
+
+
+### Bug Fixes
+
+* **ci:** pass model name and uuid ([fbdfb79](https://github.com/canonical/kratos-external-idp-integrator/commit/fbdfb799576e0b138703f792ca6ee02400308a66))
+* **ci:** pass model name and uuid ([bd11088](https://github.com/canonical/kratos-external-idp-integrator/commit/bd11088e90c50be945306b4fb05e1184f4fede51))
+
 ## [2.1.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.0.0...v2.1.0) (2025-11-14)
 
 
