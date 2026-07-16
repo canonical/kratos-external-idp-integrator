@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.2.0...v2.2.1) (2026-07-16)
+
+
+### Bug Fixes
+
+* bump LIBPATCH ([efb6822](https://github.com/canonical/kratos-external-idp-integrator/commit/efb6822651a4c61da8eaf21abfc02da7862c04ff))
+* bump LIBPATCH ([074ff11](https://github.com/canonical/kratos-external-idp-integrator/commit/074ff1178b4e75618f9f9667b4bf15868314b51e))
+
 ## [2.2.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.1.0...v2.2.0) (2026-07-15)
 
 
