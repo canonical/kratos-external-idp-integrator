@@ -1,6 +1,55 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+[project]
+name = "kratos-external-idp-integrator"
+version = "0.0.0"
+description = "Charmed Kratos External Identity Provider Integrator"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = [
+    "ops >= 2.12.0",
+    "pydantic ~= 2.11",
+]
+
+[dependency-groups]
+fmt = [
+    "isort",
+    "ruff",
+]
+lint = [
+    "codespell",
+    "isort",
+    "ruff",
+    "tomli",
+]
+unit = [
+    "jsonschema",
+    "pytest",
+    "pytest-mock",
+    "coverage[toml]",
+    "ops[testing]",
+]
+integration = [
+    "pytest",
+    "jubilant",
+    "tenacity",
+]
+dev = [
+    "pre-commit",
+    "mypy",
+    "types-PyYAML",
+    "types-requests",
+    { include-group = "fmt" },
+    { include-group = "lint" },
+    { include-group = "unit" },
+    { include-group = "integration" },
+]
+
+[tool.uv]
+package = false
+
 # Testing tools configuration
 [tool.coverage.run]
 branch = true
