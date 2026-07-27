@@ -22,4 +22,4 @@ jobs:
     name: CI
     uses: canonical/identity-team/.github/workflows/charm-pull-request.yaml@83e6e76b28b0db96c133c16bbec121cba34a86db # v1.14.3
     with:
-      use-charmcraftcache: true
+      use-charmcraftcache: false

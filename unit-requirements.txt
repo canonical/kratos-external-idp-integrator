@@ -1,3 +1,0 @@
-jsonschema
--r requirements.txt
-ops[testing]
