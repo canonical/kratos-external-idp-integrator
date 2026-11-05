@@ -30,7 +30,7 @@ config:
       description: |
         The provider name, must be one of the following:
         ["generic", "google", "facebook", "microsoft", "github",
-        "apple", "gitlab", "auth0", "slack", "spotify", "discord",
+        "github-app", "apple", "gitlab", "auth0", "slack", "spotify", "discord",
         "twitch", "netid", "yandex", "vk", "dingtalk"].
         Defaults to "generic"
       type: string
