@@ -52,6 +52,28 @@ juju integrate kratos-external-idp-integrator kratos
 Note that depending on the type of the provider different configurations may be
 necessary.
 
+### Keeping the client secret in a Juju secret
+
+`client_secret` is stored in the application's configuration, where anyone who
+can read the configuration can see it. To keep it out of the configuration,
+store it in a Juju user secret under the key `client-secret`, grant the secret
+to the charm, and set `client_secret_juju_secret` instead of `client_secret`:
+
+```shell
+juju add-secret idp-client client-secret={client_secret}
+juju grant-secret idp-client kratos-external-idp-integrator
+juju config kratos-external-idp-integrator \
+    client_id={client_id} \
+    client_secret_juju_secret={secret_uri} \
+    provider={provider}
+```
+
+`juju add-secret` prints the secret's URI. User secrets need Juju 3.3 or later.
+The charm reads a new revision of the secret when it is changed. It is blocked
+while both options are set, while the secret is not granted, and while the
+secret has no `client-secret` key. A grant made after the option is set takes
+effect at the next `update-status` hook.
+
 ### Getting the `redirect_uri`
 
 After deploying, configuring and integrating the integrator charm, its status
