@@ -121,6 +121,16 @@ def github_config() -> dict[str, Any]:
 
 
 @pytest.fixture
+def github_app_config() -> dict[str, Any]:
+    return {
+        "client_id": "client_id",
+        "client_secret": "client_secret",
+        "provider": "github-app",
+        "secret_backend": "relation",
+    }
+
+
+@pytest.fixture
 def apple_config() -> dict[str, Any]:
     return {
         "client_id": "client_id",

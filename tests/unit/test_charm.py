@@ -213,6 +213,36 @@ class TestProviderConfig:
         state_status = context.run(context.on.collect_unit_status(), state_out)
         assert state_status.unit_status == ActiveStatus("The OIDC provider is ready")
 
+    def test_github_app_config(
+        self,
+        context: Context,
+        github_app_config: dict[str, Any],
+        kratos_relation_with_data: Relation,
+    ) -> None:
+        expected_databag = {
+            "providers": [
+                {
+                    "client_id": github_app_config["client_id"],
+                    "provider": github_app_config["provider"],
+                    "client_secret": github_app_config["client_secret"],
+                    "scope": "",
+                    "id": "github-app_96da49381769303a6515a8785c7f19c383db376a",
+                    "label": "github-app",
+                    "jsonnet_mapper": None,
+                    "mapper_url": None,
+                }
+            ]
+        }
+
+        state = create_state(config=github_app_config, relations=[kratos_relation_with_data])
+
+        state_out = context.run(context.on.config_changed(), state)
+
+        assert parse_databag(list(state_out.relations)[0].local_app_data) == expected_databag
+
+        state_status = context.run(context.on.collect_unit_status(), state_out)
+        assert state_status.unit_status == ActiveStatus("The OIDC provider is ready")
+
     def test_apple_config(
         self,
         context: Context,

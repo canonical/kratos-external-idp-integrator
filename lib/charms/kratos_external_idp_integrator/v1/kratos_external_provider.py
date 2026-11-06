@@ -135,7 +135,7 @@ LIBAPI = 1
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 0
+LIBPATCH = 1
 
 PYDEPS = ["pydantic~=2.11"]
 
@@ -148,6 +148,7 @@ ALLOWED_PROVIDERS = {
     "facebook",
     "microsoft",
     "github",
+    "github-app",
     "apple",
     "gitlab",
     "auth0",
@@ -265,6 +266,19 @@ class GithubProvider(BaseProvider):
         return v.split()
 
 
+class GithubAppProvider(BaseProvider):
+    """A GitHub App. Its access comes from the app's permissions, so it requests no scopes."""
+
+    provider: Literal["github-app"]
+    client_secret: Secret
+    scope: list[str] = []
+
+    @field_validator("scope", mode="before")
+    @classmethod
+    def deserialize_scope(cls, v: Optional[str]) -> list[str]:
+        return (v or "").split()
+
+
 class MicrosoftProvider(BaseProvider):
     provider: Literal["microsoft"]
     client_secret: Secret
@@ -296,6 +310,7 @@ Provider = Annotated[
         GenericProvider,
         SocialProvider,
         GithubProvider,
+        GithubAppProvider,
         MicrosoftProvider,
         AppleProvider,
     ],
