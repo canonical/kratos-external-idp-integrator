@@ -23,8 +23,21 @@ config:
       description: The registered client_id
       type: string
     client_secret:
-      description: The registered client_secret
+      description: |
+        The registered client_secret. Use client_secret_uri instead to
+        keep it out of the application's configuration.
       type: string
+    client_secret_uri:
+      description: |
+        A Juju user secret that holds the registered client_secret under the
+        key client-secret, for example:
+
+        juju add-secret idp-client client-secret=...
+        juju grant-secret idp-client kratos-external-idp-integrator
+        juju config kratos-external-idp-integrator client_secret_uri=secret:...
+
+        Set this or client_secret, not both.
+      type: secret
     provider:
       default: generic
       description: |

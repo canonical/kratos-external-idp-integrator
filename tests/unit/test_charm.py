@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
-from ops.testing import ActionFailed, Context, Relation
+from ops.testing import ActionFailed, Context, Relation, Secret
 from unit.conftest import create_state
 from utils import parse_databag
 
@@ -339,3 +339,143 @@ class TestActions:
             context.run(context.on.action("get-redirect-uri"), state)
 
         assert exc_info.value.message == "No redirect uri is found"
+
+
+class TestClientSecretUri:
+    @staticmethod
+    def _secret_config(config: dict[str, Any], secret: Secret) -> dict[str, Any]:
+        new_config = {k: v for k, v in config.items() if k != "client_secret"}
+        new_config["client_secret_uri"] = secret.id
+        return new_config
+
+    def test_client_secret_is_read_from_the_secret(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        generic_databag_v1: dict[str, Any],
+    ) -> None:
+        secret = Secret(tracked_content={"client-secret": config["client_secret"]})
+        state = dataclasses.replace(
+            create_state(config=self._secret_config(config, secret), relations=[kratos_relation]),
+            secrets=[secret],
+        )
+
+        state_out = context.run(context.on.config_changed(), state)
+
+        relation = list(state_out.relations)[0]
+        assert parse_databag(relation.local_app_data) == generic_databag_v1
+
+    def test_plain_client_secret_still_works(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        generic_databag_v1: dict[str, Any],
+    ) -> None:
+        state = create_state(config=config, relations=[kratos_relation])
+
+        state_out = context.run(context.on.config_changed(), state)
+
+        relation = list(state_out.relations)[0]
+        assert parse_databag(relation.local_app_data) == generic_databag_v1
+
+    def test_both_set_blocks(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+    ) -> None:
+        secret = Secret(tracked_content={"client-secret": "from-the-secret"})
+        both = dict(config, client_secret_uri=secret.id)
+        state = dataclasses.replace(
+            create_state(config=both, relations=[kratos_relation]), secrets=[secret]
+        )
+
+        state_out = context.run(context.on.config_changed(), state)
+        assert not list(state_out.relations)[0].local_app_data
+
+        state_status = context.run(context.on.collect_unit_status(), state_out)
+        assert state_status.unit_status == BlockedStatus(
+            "Set either client_secret or client_secret_uri, not both"
+        )
+
+    def test_secret_not_granted_blocks(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+    ) -> None:
+        secret = Secret(tracked_content={"client-secret": "from-the-secret"})
+        # The secret is not in the state, so the charm cannot read it.
+        state = create_state(
+            config=self._secret_config(config, secret), relations=[kratos_relation]
+        )
+
+        state_out = context.run(context.on.config_changed(), state)
+        assert not list(state_out.relations)[0].local_app_data
+
+        state_status = context.run(context.on.collect_unit_status(), state_out)
+        assert state_status.unit_status == BlockedStatus(
+            "Grant the client_secret_uri secret to this application"
+        )
+
+    def test_grant_after_configuration_is_picked_up_on_update_status(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        generic_databag_v1: dict[str, Any],
+    ) -> None:
+        secret = Secret(tracked_content={"client-secret": config["client_secret"]})
+        state = dataclasses.replace(
+            create_state(config=self._secret_config(config, secret), relations=[kratos_relation]),
+            secrets=[secret],
+        )
+
+        state_out = context.run(context.on.update_status(), state)
+
+        relation = list(state_out.relations)[0]
+        assert parse_databag(relation.local_app_data) == generic_databag_v1
+
+    def test_secret_without_the_key_blocks(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+    ) -> None:
+        secret = Secret(tracked_content={"other-key": "value"})
+        state = dataclasses.replace(
+            create_state(config=self._secret_config(config, secret), relations=[kratos_relation]),
+            secrets=[secret],
+        )
+
+        state_out = context.run(context.on.config_changed(), state)
+        assert not list(state_out.relations)[0].local_app_data
+
+        state_status = context.run(context.on.collect_unit_status(), state_out)
+        assert state_status.unit_status == BlockedStatus(
+            "The client_secret_uri secret needs a client-secret key"
+        )
+
+    def test_a_new_secret_revision_updates_the_relation(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        generic_databag_v1: dict[str, Any],
+    ) -> None:
+        secret = Secret(
+            tracked_content={"client-secret": config["client_secret"]},
+            latest_content={"client-secret": "rotated"},
+        )
+        state = dataclasses.replace(
+            create_state(config=self._secret_config(config, secret), relations=[kratos_relation]),
+            secrets=[secret],
+        )
+
+        state_out = context.run(context.on.secret_changed(secret), state)
+
+        generic_databag_v1["providers"][0]["client_secret"] = "rotated"
+        relation = list(state_out.relations)[0]
+        assert parse_databag(relation.local_app_data) == generic_databag_v1
