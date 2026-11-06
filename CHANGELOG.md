@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.3.0](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.2.1...v2.3.0) (2026-11-06)
+
+
+### Features
+
+* support 26.04 base ([7219838](https://github.com/canonical/kratos-external-idp-integrator/commit/721983847bb84ef30e6be392a7fe89aa7ec61425))
+* support 26.04 base ([2ec985b](https://github.com/canonical/kratos-external-idp-integrator/commit/2ec985b09d6d8593354225f6ab8e488eb47dfef0))
+* support the github-app provider ([c65db61](https://github.com/canonical/kratos-external-idp-integrator/commit/c65db61642c84a8980efe2ce8adde1bcd9fa3479))
+* support the github-app provider ([1b2f236](https://github.com/canonical/kratos-external-idp-integrator/commit/1b2f236f127fe5eda80e1d92eaa0e8f57000cc7b))
+
 ## [2.2.1](https://github.com/canonical/kratos-external-idp-integrator/compare/v2.2.0...v2.2.1) (2026-07-16)
 
 
