@@ -40,8 +40,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         # Lifecycle events
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.secret_changed, self._on_config_changed)
-        # Granting a secret to the application fires no hook, so a grant made
-        # after client_secret_uri is set is picked up here.
+        # Juju does not emit a hook when a secret is granted.
         self.framework.observe(self.on.update_status, self._on_config_changed)
         self.framework.observe(self.on.collect_unit_status, self._on_collect_status)
 
@@ -62,11 +61,7 @@ class KratosIdpIntegratorCharm(CharmBase):
         )
 
     def _provider_config(self) -> Union[dict[str, Any], str]:
-        """The provider configuration, or why it cannot be built.
-
-        The client secret is read from the Juju secret named by
-        client_secret_uri when that option is set.
-        """
+        """Resolve provider credentials or return a configuration error."""
         config = dict(self.config)
         if not (secret_id := config.pop(CLIENT_SECRET_OPTION, None)):
             return config
@@ -86,6 +81,10 @@ class KratosIdpIntegratorCharm(CharmBase):
         return config
 
     def _on_config_changed(self, event: EventBase) -> None:
+        if not self.config["enabled"]:
+            self.external_idp_provider.remove_provider()
+            return
+
         if isinstance(config := self._provider_config(), str):
             return
 
@@ -97,16 +96,16 @@ class KratosIdpIntegratorCharm(CharmBase):
         if not self.external_idp_provider.is_ready():
             return
 
-        if not self.config["enabled"]:
-            self.external_idp_provider.remove_provider()
-            return
-
         self.external_idp_provider.create_providers(providers)
 
     def _on_redirect_uri_changed(self, event: RedirectURIChangedEvent) -> None:
         logger.info(f"The client's redirect_uri changed to {event.redirect_uri}")
 
     def _on_collect_status(self, event: CollectStatusEvent) -> None:
+        if not self.config["enabled"]:
+            event.add_status(ActiveStatus("The OIDC provider is disabled"))
+            return
+
         if isinstance(config := self._provider_config(), str):
             event.add_status(BlockedStatus(config))
         elif not self.external_idp_provider.validate_provider_config([config]):
@@ -121,9 +120,6 @@ class KratosIdpIntegratorCharm(CharmBase):
             event.add_status(
                 WaitingStatus("Waiting for the requirer charm to register the OIDC provider")
             )
-
-        if not self.config["enabled"]:
-            event.add_status(ActiveStatus("The OIDC provider is disabled"))
 
         event.add_status(ActiveStatus("The OIDC provider is ready"))
 

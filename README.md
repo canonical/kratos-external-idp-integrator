@@ -69,9 +69,10 @@ juju config kratos-external-idp-integrator \
 ```
 
 `juju add-secret` prints the secret's URI. User secrets need Juju 3.3 or later.
-The charm reads a new revision of the secret when it is changed. It is blocked
-while both options are set, while the secret is not granted, and while the
-secret has no `client-secret` key. A grant made after the option is set takes
+The charm reads a new revision of the secret when it is changed. An enabled
+provider is blocked while both options are set, while the secret is not granted,
+and while the secret has no `client-secret` key. A disabled provider does not
+need access to the secret. A grant made after the option is set takes
 effect at the next `update-status` hook.
 
 ### Getting the `redirect_uri`

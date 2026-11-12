@@ -479,3 +479,60 @@ class TestClientSecretUri:
         generic_databag_v1["providers"][0]["client_secret"] = "rotated"
         relation = list(state_out.relations)[0]
         assert parse_databag(relation.local_app_data) == generic_databag_v1
+
+    @pytest.mark.parametrize("failure", ["revoked", "missing-key", "conflicting-options"])
+    def test_disable_removes_provider_with_invalid_credentials(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        failure: str,
+    ) -> None:
+        secret = Secret(tracked_content={"client-secret": config["client_secret"]})
+        secret_config = self._secret_config(config, secret)
+        state = dataclasses.replace(
+            create_state(config=secret_config, relations=[kratos_relation]), secrets=[secret]
+        )
+        configured = context.run(context.on.config_changed(), state)
+        assert next(iter(configured.relations)).local_app_data
+
+        disabled_config = dict(secret_config, enabled=False)
+        secrets = [secret]
+        if failure == "revoked":
+            secrets = []
+        elif failure == "missing-key":
+            secrets = [Secret(id=secret.id, tracked_content={"other-key": "value"})]
+        else:
+            disabled_config["client_secret"] = "conflicting-value"
+        disabled = dataclasses.replace(configured, config=disabled_config, secrets=secrets)
+
+        state_out = context.run(context.on.config_changed(), disabled)
+
+        assert not next(iter(state_out.relations)).local_app_data
+        assert state_out.unit_status == ActiveStatus("The OIDC provider is disabled")
+
+    @pytest.mark.parametrize("use_secret", [True, False])
+    def test_invalid_provider_does_not_log_credentials(
+        self,
+        context: Context,
+        config: dict[str, Any],
+        kratos_relation: Relation,
+        caplog: pytest.LogCaptureFixture,
+        use_secret: bool,
+    ) -> None:
+        credential = "review-canary-value"
+        secret = Secret(tracked_content={"client-secret": credential})
+        invalid_config = dict(config, provider="typo", client_secret=credential)
+        if use_secret:
+            invalid_config = self._secret_config(invalid_config, secret)
+        state = dataclasses.replace(
+            create_state(config=invalid_config, relations=[kratos_relation]),
+            secrets=[secret] if use_secret else [],
+        )
+
+        state_out = context.run(context.on.config_changed(), state)
+
+        assert state_out.unit_status == BlockedStatus("Invalid OIDC provider configuration")
+        assert "External IdP provider configuration invalid" in caplog.text
+        assert "union_tag_invalid" in caplog.text
+        assert credential not in caplog.text

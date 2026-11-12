@@ -135,7 +135,7 @@ LIBAPI = 1
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 0
+LIBPATCH = 1
 
 PYDEPS = ["pydantic~=2.11"]
 
@@ -451,7 +451,10 @@ class ExternalIdpProvider(Object):
         try:
             providers = Providers.model_validate(configurations)
         except ValidationError as e:
-            logger.error("External IdP provider configuration invalid: %s", e)
+            logger.error(
+                "External IdP provider configuration invalid: %s",
+                e.errors(include_input=False, include_context=False, include_url=False),
+            )
             return None
 
         return providers
