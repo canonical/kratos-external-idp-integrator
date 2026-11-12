@@ -66,8 +66,7 @@ juju config kratos-external-idp-integrator \
     provider={provider}
 ```
 
-User secrets need Juju 3.3 or later. The charm picks up a new revision of the
-secret.
+The charm picks up a new revision of the secret.
 
 ### Getting the `redirect_uri`
 
