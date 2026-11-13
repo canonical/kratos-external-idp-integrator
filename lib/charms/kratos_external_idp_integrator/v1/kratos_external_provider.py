@@ -466,7 +466,10 @@ class ExternalIdpProvider(Object):
         try:
             providers = Providers.model_validate(configurations)
         except ValidationError as e:
-            logger.error("External IdP provider configuration invalid: %s", e)
+            logger.error(
+                "External IdP provider configuration invalid: %s",
+                e.errors(include_input=False, include_context=False, include_url=False),
+            )
             return None
 
         return providers

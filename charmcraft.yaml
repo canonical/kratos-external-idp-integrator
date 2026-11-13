@@ -23,8 +23,14 @@ config:
       description: The registered client_id
       type: string
     client_secret:
-      description: The registered client_secret
+      description: |
+        The registered client_secret. Set this or client_secret_uri.
       type: string
+    client_secret_uri:
+      description: |
+        A Juju secret with the registered client_secret under the key
+        client-secret. Set this or client_secret, not both.
+      type: secret
     provider:
       default: generic
       description: |
