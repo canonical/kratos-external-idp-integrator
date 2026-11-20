@@ -52,6 +52,22 @@ juju integrate kratos-external-idp-integrator kratos
 Note that depending on the type of the provider different configurations may be
 necessary.
 
+### Giving the client secret as a Juju secret
+
+Set `client_secret_uri` instead of `client_secret`, to a secret with the key
+`client-secret`:
+
+```shell
+juju add-secret idp-client client-secret={client_secret}
+juju grant-secret idp-client kratos-external-idp-integrator
+juju config kratos-external-idp-integrator \
+    client_id={client_id} \
+    client_secret_uri={secret_uri} \
+    provider={provider}
+```
+
+The charm picks up a new revision of the secret.
+
 ### Getting the `redirect_uri`
 
 After deploying, configuring and integrating the integrator charm, its status
